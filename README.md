@@ -102,6 +102,7 @@ See [`.env.example`](.env.example). Model names live in variables so they can ch
 | `ENABLE_PII_MASKING` | `true` (default) masks names, phones and long numbers before the language model |
 | `PRODUCTION_MODE` | `true` ignores prescription safety rules that have no reviewer |
 | `MAX_AUDIO_SECONDS`, `CORS_ORIGIN`, `PUBLIC_BASE_URL`, `SHARE_TOKEN_TTL_DAYS` | Limits, allowed origin, link base, share-link lifetime |
+| `SIGNING_KEY` | Sign-off key shared by all server instances (hosting); empty locally, where `data/signing.key` is used |
 | `VITE_API_BASE` (frontend, build time) | Backend origin when it is hosted apart from the frontend; empty in local dev (the Vite proxy is used) |
 
 ## Safety
@@ -123,7 +124,7 @@ Red-flag and safety rules in this project are **demo-grade screening rules for d
 | [`docs/SAFETY.md`](docs/SAFETY.md) | Safety rules and review status |
 | [`docs/EVAL.md`](docs/EVAL.md) | Evaluation guide and latest results |
 | [`docs/DEMO.md`](docs/DEMO.md) | Demo runbook |
-| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Hosting: frontend on Vercel, backend on Railway (Docker) |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Hosting on Vercel (frontend + backend container) and its limits |
 | [`docs/PITCH.md`](docs/PITCH.md) | Pitch text (numbers cite the evaluation report) |
 | [`docs/SOURCES.md`](docs/SOURCES.md) | Where every number comes from |
 

@@ -1,35 +1,34 @@
 # Deploying
 
-The frontend is a static Vite build on **Vercel** (project `vaidya-saathi`, https://vaidya-saathi.vercel.app). The backend runs on **Railway** as a Docker container (`Dockerfile`, `railway.json`) with a volume at `/app/data`.
+Live: **https://vaidya-saathi.vercel.app** (Vercel project `vaidya-saathi`, Hobby plan).
 
-Why not the backend on Vercel too: Vercel containers can run ffmpeg and WebSockets, but they are stateless and scale to zero after 5 minutes, so the SQLite file (sign-offs, share links, history, analytics, the sign-off key) would be lost, and the spec allows no database other than SQLite. The browser calls the backend directly (`VITE_API_BASE`) rather than through a Vercel rewrite, because Vercel lists a 30 s limit on proxied requests and an extraction with a retry can take longer.
+One Vercel project runs two services (`vercel.json`): `frontend` (the Vite build, with an SPA fallback so `/share/<token>` works) and `backend` (the FastAPI app as a container built from `Dockerfile`, which adds ffmpeg). Top-level rewrites send `/api/*` and `/demo/*` to the backend and everything else to the frontend, so both share one origin and `VITE_API_BASE` stays empty. `.vercelignore` keeps `.env`, `data/`, virtualenvs and `node_modules` out of the upload.
 
-The app has no login. Anyone with the URL can use it, and in real mode every use spends Sarvam credits on your key. Share the URL only with people you trust, and use fake patients only.
+The app has no login. Anyone with the URL can use it, and every use spends Sarvam credits on your key. Share it only with people you trust, and use fake patients only.
 
-## Backend (Railway)
+## Limits of this setup (chosen to stay on Vercel's free plan)
+
+- **Nothing is kept for long.** Vercel containers are stateless and stop after about 5 minutes without traffic. SQLite (`/app/data`) lives inside one instance, so signed records, share links, history, analytics and referral tickets disappear when it stops, and a request that lands on another instance does not see them. A QR share link works while the instance is warm, not days later. A host with a persistent disk (the `Dockerfile` runs anywhere, e.g. Railway with a volume at `/app/data`) fixes this.
+- **Sign-off works across instances** because `SIGNING_KEY` is set as a Vercel secret (every instance verifies with the same key).
+- **Uploads are capped at 4.5 MB** per request (Vercel). A 3-minute browser recording is well under that; a long uncompressed WAV upload is not.
+- **5 minutes per request** (Hobby maximum).
+
+## Environment variables (Production)
+
+`SARVAM_API_KEY` and `SIGNING_KEY` (secrets), `TTS_SPEAKER_MR`, `TTS_SPEAKER_HI`, `TTS_SPEAKER_EN`, `MOCK_MODE=false`, `STT_MODE=codemix`, `PUBLIC_BASE_URL` and `CORS_ORIGIN` = `https://vaidya-saathi.vercel.app`. Model names use the defaults in `backend/config.py`. Add one with:
 
 ```bash
-npx @railway/cli login
-npx @railway/cli init --name vaidya-saathi-api        # once
-npx @railway/cli up --detach                          # uploads the repo (minus .dockerignore) and builds the Dockerfile
-npx @railway/cli volume add --mount-path /app/data    # once
-npx @railway/cli domain                               # once: prints https://<name>.up.railway.app
+npx vercel env add NAME production
 ```
 
-Variables (`npx @railway/cli variables --set KEY=value`): `SARVAM_API_KEY`, `TTS_SPEAKER_MR`, `TTS_SPEAKER_HI`, `TTS_SPEAKER_EN` (from your local `.env`), `MOCK_MODE=false`, `STT_MODE=codemix`, and `CORS_ORIGIN` and `PUBLIC_BASE_URL` both set to the Vercel URL (no trailing slash; one origin only, so Vercel preview URLs are blocked). Model names default to the values in `.env.example`.
-
-Check: `https://<backend>/api/health` returns `{"status":"ok","mock":false}`.
-
-## Frontend (Vercel)
+## Redeploy
 
 ```bash
-cd frontend
-npx vercel login
-npx vercel link --yes --project vaidya-saathi                  # once
-npx vercel env add VITE_API_BASE production                     # the Railway URL; baked in at build time
+npx vercel login                                  # once
+npx vercel link --yes --project vaidya-saathi     # once, from the repo root
 npx vercel deploy --prod
 ```
 
 ## Check
 
-Open the Vercel URL, tap **S2** under "Try a demo", **Extract details**, see both red flags, sign, **Make summary**, play it, then **Phone link (QR)** and open the link.
+`https://vaidya-saathi.vercel.app/api/health` returns `{"status":"ok","mock":false}`. Then open the site, tap **S2** under "Try a demo", **Extract details**, see both red flags, sign, **Make summary**, play it, and open **Phone link (QR)**.

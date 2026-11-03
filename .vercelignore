@@ -1,0 +1,15 @@
+# Never upload secrets, local data or environments.
+.env
+.env.*
+!.env.example
+.venv
+venv
+data
+**/__pycache__
+**/.pytest_cache
+**/node_modules
+frontend/dist
+eval/results
+eval/audio
+*.db
+*.log

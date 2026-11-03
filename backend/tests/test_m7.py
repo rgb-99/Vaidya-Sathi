@@ -81,6 +81,15 @@ def test_signed_record_passes_every_gate():
     assert main.export_record(out['id'])['resourceType'] == 'Bundle'
 
 
+def test_signing_key_from_env_is_shared_across_instances(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, 'SIGNING_KEY', 'shared-secret')
+    s = do_sign('S1')['record']
+    monkeypatch.setattr(db, 'DB_PATH', tmp_path / 'other' / 'app.db')   # another instance: no local key file
+    assert signoff.is_signed(s)
+    monkeypatch.setattr(config, 'SIGNING_KEY', '')
+    assert not signoff.is_signed(s)   # a different key rejects it
+
+
 def test_signoff_needs_a_clinician_name():
     assert status(main.sign_off, SignoffRequest(record=structured('S1'), clinician_name='  ')) == 400
 

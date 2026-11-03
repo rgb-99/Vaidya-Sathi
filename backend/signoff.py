@@ -1,11 +1,13 @@
 """Clinician sign-off: an HMAC over the record, made with a server-side key, so the API can verify that a
-record it receives was signed and not edited since. The key lives in data/ (git-ignored)."""
+record it receives was signed and not edited since. The key is SIGNING_KEY when set (hosts that run several
+instances), otherwise data/signing.key (git-ignored)."""
 import hashlib
 import hmac
 import json
 import secrets
 from datetime import datetime, timezone
 
+import config
 import db
 
 # Derived or display-only fields are not part of what the clinician signed.
@@ -13,6 +15,8 @@ UNSIGNED_FIELDS = {'signature', 'red_flags', 'safety_warnings', 'warnings'}
 
 
 def _key():
+    if config.SIGNING_KEY:
+        return config.SIGNING_KEY.encode()
     path = db.DB_PATH.parent / 'signing.key'
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():

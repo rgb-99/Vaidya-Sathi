@@ -36,6 +36,7 @@ MAX_AUDIO_SECONDS = int(os.getenv('MAX_AUDIO_SECONDS', '180'))
 CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'http://localhost:5173')
 PUBLIC_BASE_URL = os.getenv('PUBLIC_BASE_URL', 'http://localhost:5173')
 SHARE_TOKEN_TTL_DAYS = int(os.getenv('SHARE_TOKEN_TTL_DAYS', '7'))
+SIGNING_KEY = os.getenv('SIGNING_KEY', '')   # set on hosts with several instances; empty: data/signing.key
 
 PRODUCTION_MODE = _bool('PRODUCTION_MODE')   # true: safety rules without a reviewer are ignored
 ENABLE_PII_MASKING = _bool('ENABLE_PII_MASKING', 'true')   # on by default: privacy first
