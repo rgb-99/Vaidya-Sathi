@@ -12,7 +12,8 @@
 - [ ] Backend running (`uvicorn backend.main:app`).
 - [ ] Mic tested — record a short clip and verify transcript appears.
 - [ ] Backup: `MOCK_MODE=true` ready to toggle if network/mic fails.
-- [ ] Pre-recorded demo audio files in `demo/audio/` ready.
+- [ ] Pre-recorded demo audio files in `demo/audio/` ready (`S1.wav`-`S3.wav` are synthetic stand-ins, see `demo/README.md`; replace with fake-patient recordings).
+- [ ] `ffmpeg` and `ffprobe` installed on the demo machine (real mode only).
 - [ ] DemoPicker dropdown tested with all 3 scenarios.
 - [ ] Language selector tested (Marathi, Hindi, English).
 
@@ -85,6 +86,8 @@
 
 - **CORS error:** Check that `CORS_ORIGIN` in `.env` matches the frontend URL.
 - **API key error:** Verify `SARVAM_API_KEY` is set in `.env` and not expired.
-- **Audio format error:** Ensure the browser records WebM or WAV; backend converts with ffmpeg if needed.
+- **Audio format error (400):** the file is not valid audio. Browser WebM and WAV/MP3/M4A/OGG/FLAC are accepted; the backend decodes with ffmpeg when needed.
+- **Audio too long (413):** the limit is 180 s (`MAX_AUDIO_SECONDS`). Longer clips are split into 28 s pieces for Sarvam automatically.
+- **Microphone blocked:** allow it in the address bar (needs localhost or https) or use "upload an audio file".
 - **Slow response:** Check network; consider using `MOCK_MODE` for the demo.
 

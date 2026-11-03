@@ -41,10 +41,11 @@ export default function App() {
     setRecord(null); setConfirmed(false); setSummary(null); setAlertSrc(''); setTicket(null)
   }
 
-  const onTranscribe = (blob, filename) =>
+  const onAudio = (blob, filename) =>
     run('transcribe', async () => {
       const r = await api.transcribe(blob, filename)
       setTranscript(r.transcript)
+      if (!r.transcript.trim()) setError('No speech was detected. Try again, or type the transcript manually.')
     })
 
   const extract = () =>
@@ -90,8 +91,7 @@ export default function App() {
       <main className="grid gap-4 p-4 md:grid-cols-3">
         <section className="space-y-3">
           <h2 className="font-bold">1. Recorder and transcript</h2>
-          <Recorder scenarioId={scenarioId} onTranscribe={onTranscribe} busy={busy === 'transcribe'} />
-          {busy === 'transcribe' && <p>Transcribing…</p>}
+          <Recorder scenarioId={scenarioId} onAudio={onAudio} busy={busy === 'transcribe'} />
           <textarea className="border rounded w-full p-2 h-56" placeholder="Transcript appears here (editable)"
             value={transcript} onChange={(e) => setTranscript(e.target.value)} />
           <button disabled={!transcript || busy === 'structure'} onClick={extract} className="w-full bg-blue-700 text-white rounded py-2 disabled:opacity-40">

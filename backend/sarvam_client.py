@@ -36,11 +36,17 @@ def _get_client():
 
 
 def _call(fn):
-    """Run fn(); retry once on 429 with backoff; map ApiError to SarvamError."""
+    """Run fn(); retry once on 429 or timeout with backoff; map ApiError to SarvamError."""
+    import httpx
     from sarvamai.core.api_error import ApiError
     for attempt in range(2):
         try:
             return fn()
+        except httpx.TimeoutException:
+            if attempt == 0:
+                time.sleep(2)
+                continue
+            raise SarvamError('Sarvam did not respond in time.', 502)
         except ApiError as e:
             if e.status_code == 429 and attempt == 0:
                 time.sleep(2)
@@ -60,15 +66,18 @@ def chat(model, system, user):
     return r.choices[0].message.content
 
 
-def stt(path, model=None, mode=None):
+def stt(path, model=None, mode=None, language_code='unknown'):
+    """Returns {'transcript', 'language'}. language_code='unknown' means auto-detect."""
     if config.MOCK_MODE:
-        return ''
+        return {'transcript': '', 'language': ''}
     model, mode = model or config.STT_MODEL, mode or config.STT_MODE
 
     def run():
         with open(path, 'rb') as f:
-            return _get_client().speech_to_text.transcribe(file=f, model=model, mode=mode)
-    return _call(run).transcript
+            return _get_client().speech_to_text.transcribe(
+                file=f, model=model, mode=mode, language_code=language_code)
+    r = _call(run)
+    return {'transcript': r.transcript or '', 'language': r.language_code or ''}
 
 
 def tts(text, language_code, speaker=None, model=None):

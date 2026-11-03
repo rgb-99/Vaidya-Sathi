@@ -52,6 +52,8 @@ npm install
 npm run dev
 ```
 
+> **System requirement:** `ffmpeg` and `ffprobe` (used to decode browser WebM and split audio longer than 30 s). Not needed in mock mode.
+
 ### 4. Mock Mode (no API key needed)
 
 ```bash
@@ -68,7 +70,19 @@ uvicorn main:app --reload --port 8000
 python scripts/smoke_sarvam.py
 ```
 
-> Status (M0): every `/api` route returns canned data in mock mode. With `MOCK_MODE=false`, routes not yet implemented for real return `501`. Real STT is M1.
+### 6. Compare speech-to-text modes (needs a real key)
+
+```bash
+# From the repo root
+python scripts/compare_stt.py            # every clip in demo/audio, modes transcribe and codemix
+python scripts/synthesize_demo_clips.py  # regenerate the synthetic stand-in clips (see demo/README.md)
+```
+
+STT mode chosen: `codemix` (provisional, from 3 synthetic clips; see `docs/DECISIONS.md`). Change it with `STT_MODE` in `.env`.
+
+> Status (M1): `/api/transcribe` is real when `MOCK_MODE=false` (browser recording or file upload, up to 180 s). Structuring, summary, red flags, alert audio and referral are still canned or 501.
+>
+> Status (M0): every `/api` route returns canned data in mock mode. With `MOCK_MODE=false`, routes not yet implemented for real return `501`.
 
 ---
 

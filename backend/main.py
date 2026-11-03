@@ -11,11 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 import config
 import mock_data
 import sarvam_client
+import voice
 from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, StructureRequest,
                      SummaryRequest, SummaryResponse)
 
@@ -57,6 +59,11 @@ async def validation_error(_, exc):
     return JSONResponse({'error': 'Invalid request.'}, status_code=422)
 
 
+@app.exception_handler(voice.AudioError)
+async def audio_error(_, exc):
+    return JSONResponse({'error': str(exc)}, status_code=exc.status_code)
+
+
 @app.exception_handler(sarvam_client.SarvamError)
 async def sarvam_error(_, exc):
     return JSONResponse({'error': str(exc)}, status_code=exc.status_code)
@@ -69,11 +76,8 @@ def health():
 
 @app.post('/api/transcribe')
 async def transcribe(audio: UploadFile = File(...)):
-    require_mock('/api/transcribe')
     with timed('transcribe'):
-        sid = mock_data.scenario_for_filename(audio.filename)
-        s = mock_data.SCENARIOS[sid]
-        return {'transcript': s['transcript'], 'language': s['language']}
+        return await run_in_threadpool(voice.transcribe, await audio.read(), audio.filename)
 
 
 @app.post('/api/structure')
