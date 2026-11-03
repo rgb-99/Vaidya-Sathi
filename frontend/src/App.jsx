@@ -17,15 +17,29 @@ import SignOff from './components/SignOff.jsx'
 import SummaryPlayer from './components/SummaryPlayer.jsx'
 
 const FALLBACK_LANGS = [{ code: 'mr-IN', name: 'Marathi' }, { code: 'hi-IN', name: 'Hindi' }, { code: 'en-IN', name: 'English' }]
+const DEFAULT_LANG = 'mr-IN'
 const wavSrc = (b64) => `data:audio/wav;base64,${b64}`
 
 export default function App() {
   const [mock, setMock] = useState(null)
   const [scenarios, setScenarios] = useState([])
   const [scenarioId, setScenarioId] = useState('')
-  const [lang, setLang] = useState('mr-IN')
+  const [langChoice, setLangChoice] = useState('auto')   // 'auto' = follow the detected language, or a language code picked by hand
+  const [detected, setDetected] = useState('')
   const [langs, setLangs] = useState(FALLBACK_LANGS)
-  const langManual = useRef(false)
+  const [tab, setTab] = useState('record')
+  const [theme, setTheme] = useState(() => (document.documentElement.classList.contains('dark') ? 'dark' : 'light'))
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    document.documentElement.classList.toggle('dark', next === 'dark')
+    try { localStorage.setItem('vs-theme', next) } catch { /* private window: the choice just is not remembered */ }
+    setTheme(next)
+  }
+  // Language used for the summary, alerts and share page. Auto: the language heard in the audio (or named in the
+  // record); a language without a voice falls back to English, and nothing detected yet falls back to the default.
+  const supported = (code) => langs.some((l) => l.code === code)
+  const lang = langChoice !== 'auto' ? langChoice : detected ? (supported(detected) ? detected : 'en-IN') : DEFAULT_LANG
+  const langName = (code) => langs.find((l) => l.code === code)?.name || code
   const [utterances, setUtterances] = useState([])
   const [transcript, setTranscript] = useState('')
   const [record, setRecord] = useState(null)
@@ -60,7 +74,7 @@ export default function App() {
     setUtterances(r.utterances || [])
     if (r.notice) setError(r.notice)
     else if (!r.transcript.trim()) setError('No speech was detected. Try again, or type the transcript manually.')
-    if (!langManual.current && langs.some((l) => l.code === r.language)) setLang(r.language)
+    if (r.language) setDetected(r.language)
   }
 
   // Live mode: words are appended as they arrive, and the form is re-filled every few seconds (debounced).
@@ -81,7 +95,11 @@ export default function App() {
     live.current = { text: '', timer: null }
     setTranscript(full)
     setConfirmed(false); setRecordId(null)
-    run('structure', async () => setRecord(await api.structure(full)))
+    run('structure', async () => {
+      const r = await api.structure(full)
+      setRecord(r)
+      if (/^[a-z]{2,3}-IN$/.test(r.language_detected || '')) setDetected((d) => d || r.language_detected)
+    })
   }
 
   const run = async (name, fn) => {
@@ -94,7 +112,7 @@ export default function App() {
   const pickScenario = async (id) => {
     setScenarioId(id)
     startedAt.current = ''
-    setTranscript(''); setUtterances([])
+    setTranscript(''); setUtterances([]); setDetected('')
     setRecord(null); setConfirmed(false); setRecordId(null); setSummary(null); setAlertSrc(''); setTicket(null); setShareInfo(null)
     const s = scenarios.find((x) => x.id === id)
     if (!s) return
@@ -120,6 +138,7 @@ export default function App() {
     run('structure', async () => {
       const r = await api.structure(transcript, utterances)
       setRecord(r)
+      if (/^[a-z]{2,3}-IN$/.test(r.language_detected || '')) setDetected((d) => d || r.language_detected)
       if (r.warnings?.length) setError(r.warnings[0])
       setConfirmed(false); setRecordId(null); setSummary(null); setTicket(null)
     })
@@ -158,97 +177,118 @@ export default function App() {
   })
 
   const urgent = record?.red_flags.some((f) => f.severity === 'urgent')
+  const tabs = [['record', 'Record'], ['evidence', `Evidence${record?.inferred?.length ? ` (${record.inferred.length} unverified)` : ''}`], ...(vision ? [['photo', 'Prescription photo']] : [])]
+  const swap = () => setUtterances((us) => us.map((u) => ({ ...u, speaker: u.speaker === 'clinician' ? 'patient' : u.speaker === 'patient' ? 'clinician' : 'unknown' })))
+  const select = 'rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/30'
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-5 py-4">
-          <h1 className="text-xl font-semibold tracking-tight">Vaidya Saathi</h1>
-          {mock && <span className="rounded-full bg-orange-100 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider text-orange-800">mock mode</span>}
+    <div className="flex min-h-screen flex-col lg:h-screen lg:overflow-hidden">
+      <header className="shrink-0 border-b border-line bg-surface">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-2">
+          <h1 className="text-lg font-semibold tracking-tight">Vaidya Saathi</h1>
+          {mock && <span className="rounded-full bg-orange-100 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-orange-800 dark:bg-orange-900/40 dark:text-orange-200">mock mode</span>}
           <nav className="flex gap-1 text-sm">
             {[['consult', 'Consultation'], ['history', 'History'], ['stats', 'Analytics'], ['eval', 'Eval']].map(([v, label]) => (
-              <button key={v} onClick={() => setView(v)} className={`rounded-full px-3 py-1.5 ${view === v ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}>{label}</button>
+              <button key={v} onClick={() => setView(v)} className={`rounded-full px-3 py-1 ${view === v ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}>{label}</button>
             ))}
           </nav>
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <select aria-label="Language" className="rounded-full border border-line bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30" value={lang} onChange={(e) => { langManual.current = true; setLang(e.target.value) }}>
+            <select aria-label="Language" title="Language of the summary, alerts and share page" className={select} value={langChoice} onChange={(e) => setLangChoice(e.target.value)}>
+              <option value="auto">{`Auto-detect${langChoice === 'auto' && detected ? ` (${langName(detected)})` : ''}`}</option>
               {langs.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
             </select>
             <DemoPicker scenarios={scenarios} value={scenarioId} onChange={pickScenario} />
+            <button className={select} onClick={toggleTheme} aria-label="Switch between dark and light theme" title="Switch theme">{theme === 'dark' ? 'Light' : 'Dark'}</button>
           </div>
         </div>
-        <p className="bg-ink px-5 py-2 text-center text-sm font-medium text-white">
+        <p className="border-t border-amber-300 bg-amber-100 px-4 py-1 text-center text-xs font-medium text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
           AI-assisted documentation. Clinician must review. Not a substitute for medical judgement.
         </p>
       </header>
 
       {error && (
-        <div className="flex items-center justify-center gap-3 border-b border-red-200 bg-red-50 px-5 py-2 text-sm text-red-900" role="alert">
+        <div className="flex shrink-0 items-center justify-center gap-3 border-b border-red-200 bg-red-50 px-4 py-1.5 text-sm text-red-900 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200" role="alert">
           <span>{error}</span>
           <button className="link" onClick={() => setError('')}>Dismiss</button>
         </div>
       )}
 
+      <div className="min-h-0 flex-1 overflow-y-auto">
       {view === 'history' ? <History /> : view === 'eval' ? <EvalPage /> : view === 'stats' ? <Analytics /> : (
-      <main className="mx-auto grid max-w-7xl gap-5 px-5 py-6 md:grid-cols-3">
-        <section className="card space-y-4">
-          <div className="eyebrow">01 — Record</div>
-          <Recorder scenarioId={scenarioId} onAudio={onAudio} busy={busy === 'transcribe'} streaming={streaming} language={lang === 'unknown' ? 'unknown' : lang} onLivePartial={livePartial} onLiveDone={liveDone} />
-          <div>
+      <main className="grid h-full w-full gap-3 p-3 lg:grid-cols-[minmax(280px,1fr)_minmax(0,2.2fr)_minmax(260px,1fr)]">
+        {/* 1. capture */}
+        <section className="card flex min-h-0 flex-col gap-3 overflow-hidden">
+          <div className="eyebrow">01 · Record</div>
+          <Recorder scenarioId={scenarioId} onAudio={onAudio} busy={busy === 'transcribe'} streaming={streaming}
+            language={langChoice === 'auto' ? (detected || 'unknown') : langChoice} onLivePartial={livePartial} onLiveDone={liveDone} />
+          <div className="flex min-h-[8rem] flex-1 flex-col">
             <span className="label">Transcript (editable)</span>
-            <textarea className="input h-56" placeholder="Transcript appears here"
+            <textarea className="input min-h-0 flex-1 resize-none" placeholder="Transcript appears here"
               value={transcript} onChange={(e) => { if (e.target.value.trim()) markStart(); setTranscript(e.target.value); setUtterances([]) }} />
           </div>
+          <div className="max-h-40 shrink-0 overflow-y-auto"><DiarizedTranscript utterances={utterances} onSwap={swap} /></div>
           <OfflineQueue onUse={applyTranscript} />
-          <DiarizedTranscript utterances={utterances} onSwap={() => setUtterances((us) => us.map((u) => ({ ...u, speaker: u.speaker === 'clinician' ? 'patient' : u.speaker === 'patient' ? 'clinician' : 'unknown' })))} />
-          <button disabled={!transcript || busy === 'structure'} onClick={extract} className="btn-ink w-full">
+          <button disabled={!transcript || busy === 'structure'} onClick={extract} className="btn-ink w-full shrink-0">
             {busy === 'structure' ? 'Extracting…' : 'Extract record'}
           </button>
         </section>
 
-        <section className="card space-y-4">
-          <div className="eyebrow">02 — Review</div>
+        {/* 2. review */}
+        <section className="card flex min-h-0 flex-col gap-2 overflow-hidden">
+          <div className="flex items-center gap-3">
+            <div className="eyebrow">02 · Review</div>
+            {record && (
+              <div className="ml-auto flex gap-1 text-xs">
+                {tabs.map(([k, label]) => (
+                  <button key={k} onClick={() => setTab(k)} className={`rounded-full px-3 py-1 ${tab === k ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}>{label}</button>
+                ))}
+              </div>
+            )}
+          </div>
           {record ? (
             <>
-              <RedFlagBanner flags={record.red_flags} onPlay={playAlert} />
-              <SafetyWarnings warnings={record.safety_warnings} />
-              {alertSrc && <audio controls autoPlay src={alertSrc} className="w-full" />}
-              <RecordForm record={record} onChange={onRecordChange} locked={confirmed} />
-              {vision && <PrescriptionPhoto record={record} />}
-              <SaidInferred record={record} />
-              <SignOff record={record} onSign={signOff} busy={busy === 'signoff'} />
+              <div className="max-h-[38%] shrink-0 space-y-2 overflow-y-auto empty:hidden">
+                <RedFlagBanner flags={record.red_flags} onPlay={playAlert} />
+                <SafetyWarnings warnings={record.safety_warnings} />
+                {alertSrc && <audio controls autoPlay src={alertSrc} className="h-8 w-full" />}
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                {tab === 'record' && <RecordForm record={record} onChange={onRecordChange} locked={confirmed} />}
+                {tab === 'evidence' && <SaidInferred record={record} />}
+                {tab === 'photo' && vision && <PrescriptionPhoto record={record} />}
+              </div>
+              <div className="shrink-0"><SignOff record={record} onSign={signOff} busy={busy === 'signoff'} /></div>
             </>
-          ) : <p className="text-sm text-muted">Extract a record from the transcript to begin.</p>}
+          ) : <p className="text-sm text-muted">Record or pick a demo scenario, then press “Extract record”.</p>}
         </section>
 
-        <section className="card space-y-4">
-          <div className="eyebrow">03 — Patient summary</div>
+        {/* 3. patient */}
+        <section className="card flex min-h-0 flex-col gap-3 overflow-hidden">
+          <div className="eyebrow">03 · Patient{lang ? ` · ${langName(lang)}${langChoice === 'auto' ? ' (auto)' : ''}` : ''}</div>
           <SummaryPlayer summary={summary} audioSrc={summary?.audio_base64 ? wavSrc(summary.audio_base64) : ''}
             canGenerate={confirmed} onGenerate={genSummary} busy={busy === 'summary'}>
             {confirmed && (
-              <div className="space-y-2 rounded-xl border border-line bg-bg p-3">
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={includeDx} onChange={(e) => setIncludeDx(e.target.checked)} /> Include diagnosis on the patient page</label>
-                <button disabled={busy === 'share'} onClick={makeShare} className="btn-ink w-full">{busy === 'share' ? 'Creating…' : 'Create patient share link'}</button>
+              <div className="shrink-0 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <button disabled={busy === 'share'} onClick={makeShare} className="btn-ink">{busy === 'share' ? 'Creating…' : 'Share link + QR'}</button>
+                  <button disabled={busy === 'card'} onClick={printCard} className="btn-outline">Print card</button>
+                  <a className="btn-outline" href={`/api/schedule.ics?record_id=${recordId}`}>Reminders (.ics)</a>
+                  <a className="btn-outline" href={`/api/export/${recordId}.json`} target="_blank" rel="noreferrer">Export JSON</a>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={includeDx} onChange={(e) => setIncludeDx(e.target.checked)} /> Show diagnosis on the patient page</label>
                 {shareInfo && (
-                  <div className="space-y-2 text-sm">
-                    <img alt="QR code for the patient page" className="mx-auto h-40 w-40" src={`data:image/png;base64,${shareInfo.qr_png_base64}`} />
-                    <a className="link break-all" href={shareInfo.url} target="_blank" rel="noreferrer">{shareInfo.url}</a>
-                    <div className="text-muted">Expires {new Date(shareInfo.expires_at).toLocaleDateString()}</div>
+                  <div className="flex items-center gap-3 rounded-xl border border-line bg-bg p-2 text-xs">
+                    <img alt="QR code for the patient page" className="h-24 w-24 shrink-0 rounded bg-white p-1" src={`data:image/png;base64,${shareInfo.qr_png_base64}`} />
+                    <div className="min-w-0">
+                      <a className="link break-all" href={shareInfo.url} target="_blank" rel="noreferrer">{shareInfo.url}</a>
+                      <div className="text-muted">Expires {new Date(shareInfo.expires_at).toLocaleDateString()}</div>
+                    </div>
                   </div>
                 )}
-                <a className="link block text-sm" href={`/api/schedule.ics?record_id=${recordId}`}>Download reminder calendar (.ics)</a>
-              </div>
-            )}
-            {confirmed && <a className="btn-outline w-full" href={`/api/export/${recordId}.json`} target="_blank" rel="noreferrer">Export (FHIR-inspired JSON)</a>}
-            {confirmed && <button disabled={busy === 'card'} onClick={printCard} className="btn-outline w-full">Print medicine card</button>}
-            {confirmed && urgent && (
-              <div className="space-y-3 rounded-xl border border-line bg-bg p-4">
-                <button disabled={busy === 'referral'} onClick={makeTicket} className="btn-danger">Create referral ticket</button>
-                {ticket && (
-                  <div className="text-sm">
-                    <div className="font-semibold">Ticket {ticket.ticket_id}</div>
-                    <div className="text-muted">To: {ticket.destination}</div>
-                    <div className="text-muted">{new Date(ticket.created_at).toLocaleString()}</div>
+                {urgent && (
+                  <div className="rounded-xl border border-line bg-bg p-2">
+                    <button disabled={busy === 'referral'} onClick={makeTicket} className="btn-danger w-full">Create referral ticket</button>
+                    {ticket && <div className="mt-1 text-xs"><b>{ticket.ticket_id}</b> <span className="text-muted">to {ticket.destination}, {new Date(ticket.created_at).toLocaleString()}</span></div>}
                   </div>
                 )}
               </div>
@@ -257,6 +297,7 @@ export default function App() {
         </section>
       </main>
       )}
+      </div>
     </div>
   )
 }

@@ -12,8 +12,8 @@ export default function History() {
 
   const when = (iso) => new Date(iso).toLocaleString()
   return (
-    <main className="mx-auto grid max-w-7xl gap-5 px-5 py-6 md:grid-cols-2">
-      {error && <p className="text-red-700" role="alert">{error}</p>}
+    <main className="grid w-full gap-3 p-3 md:grid-cols-2">
+      {error && <p className="text-red-700 dark:text-red-300 dark:text-red-300" role="alert">{error}</p>}
       <section className="card space-y-3">
         <div className="eyebrow">Confirmed records</div>
         {!records.length && <p className="text-sm text-muted">No confirmed records yet.</p>}

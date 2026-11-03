@@ -2,22 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Design language: neutral off-white canvas, near-black ink, one indigo accent, hairline borders,
-   rounded cards, mono uppercase labels. System fonts only so the app works offline. */
+/* Colours are CSS variables (space-separated RGB) so one set of classes serves both themes.
+   Dark is the default; the toggle in the header stores the choice in localStorage. */
+:root {
+  --bg: 250 250 250; --surface: 255 255 255; --ink: 19 19 19; --muted: 92 92 92; --line: 230 230 230;
+  --accent: 43 43 184; --accent-dark: 31 31 148; --accent-soft: 238 240 255; --linkc: 43 43 184;
+}
+.dark {
+  --bg: 14 14 16; --surface: 23 23 26; --ink: 237 237 237; --muted: 154 154 163; --line: 44 44 52;
+  --accent: 91 95 224; --accent-dark: 79 83 205; --accent-soft: 35 36 74; --linkc: 154 160 255;
+  color-scheme: dark;
+}
+
 @layer base {
   body { @apply bg-bg text-ink antialiased; }
-  textarea, input, select { font-family: inherit; }
+  textarea, input, select, button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--line)); border-radius: 8px; }
 }
 
 @layer components {
-  .card { @apply bg-white border border-line rounded-2xl p-5 shadow-sm; }
-  .eyebrow { @apply font-mono text-xs uppercase tracking-widest text-muted; }
-  .label { @apply block text-xs font-medium text-muted mb-1; }
-  .input { @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:bg-bg disabled:text-muted; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
-  .btn-ink { @apply btn bg-ink text-white hover:bg-black/80; }
+  .card { @apply bg-surface border border-line rounded-2xl p-4 shadow-sm; }
+  .eyebrow { @apply font-mono text-[11px] uppercase tracking-widest text-muted; }
+  .label { @apply block text-[11px] font-medium text-muted mb-0.5; }
+  .input { @apply w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-bg disabled:text-muted; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
+  .btn-ink { @apply btn bg-ink text-bg hover:opacity-85; }
   .btn-accent { @apply btn bg-accent text-white hover:bg-accent-dark; }
   .btn-danger { @apply btn bg-red-700 text-white hover:bg-red-800; }
-  .btn-outline { @apply btn border border-line bg-white text-ink hover:bg-bg; }
-  .link { @apply text-accent underline underline-offset-2 hover:text-accent-dark disabled:opacity-40; }
+  .btn-outline { @apply btn border border-line bg-surface text-ink hover:bg-bg; }
+  .link { @apply text-linkc underline underline-offset-2 hover:opacity-80 disabled:opacity-40; }
 }

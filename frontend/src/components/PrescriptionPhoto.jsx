@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import * as api from '../api.js'
 
 const LABEL = { new: 'New today', stopped: 'Not on today\'s prescription', dose_changed: 'Dose changed', unchanged: 'Unchanged' }
-const COLOR = { new: 'bg-green-50 border-green-300', stopped: 'bg-red-50 border-red-300', dose_changed: 'bg-amber-50 border-amber-300', unchanged: 'bg-bg border-line' }
+const COLOR = { new: 'bg-green-50 border-green-300', stopped: 'bg-red-50 dark:bg-red-950/40 border-red-300', dose_changed: 'bg-amber-50 dark:bg-amber-950/40 border-amber-300', unchanged: 'bg-bg border-line' }
 
 // Reads an older (fake) prescription photo and compares it with today's record. Nothing is merged: each line
 // can be marked accepted or rejected by the clinician, which only records their review.
@@ -46,7 +46,7 @@ export default function PrescriptionPhoto({ record }) {
       <input ref={input} type="file" accept="image/png,image/jpeg,application/pdf" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) upload(f) }} />
       <button className="btn-outline" disabled={busy} onClick={() => input.current.click()}>{busy ? 'Reading photo…' : 'Upload photo'}</button>
-      {error && <p className="text-sm text-red-700" role="alert">{error}</p>}
+      {error && <p className="text-sm text-red-700 dark:text-red-300 dark:text-red-300" role="alert">{error}</p>}
       {lines.map((l) => (
         <div key={l.drug} className={`rounded-lg border p-2 text-sm ${COLOR[l.status]}`}>
           <div className="font-medium">{l.drug}: {LABEL[l.status]}</div>

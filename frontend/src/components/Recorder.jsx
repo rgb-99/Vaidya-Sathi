@@ -102,7 +102,7 @@ export default function Recorder({ scenarioId, onAudio, busy, streaming, languag
       </button>
       {streaming && (
         <button disabled={busy || recording} onClick={live ? () => { stopLive.current(); } : goLive}
-          className={`btn w-full border border-line ${live ? 'bg-red-600 text-white animate-pulse' : 'bg-white'}`}>
+          className={`btn w-full border border-line ${live ? 'bg-red-600 text-white animate-pulse' : 'bg-surface'}`}>
           {live ? 'Stop live transcription' : 'Record live (words appear as you speak)'}
         </button>
       )}
@@ -113,7 +113,7 @@ export default function Recorder({ scenarioId, onAudio, busy, streaming, languag
         </button>
         <span className="ml-auto font-mono text-xs text-muted">max {fmt(MAX_SECONDS)}</span>
       </div>
-      {error && <p className="text-sm text-red-700" role="alert">{error}</p>}
+      {error && <p className="text-sm text-red-700 dark:text-red-300 dark:text-red-300" role="alert">{error}</p>}
     </div>
   )
 }

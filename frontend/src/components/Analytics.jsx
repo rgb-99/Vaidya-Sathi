@@ -15,7 +15,7 @@ export default function Analytics() {
     if (!res.ok) return setError(body.error)
     setData(body)
   }
-  if (!data) return <main className="mx-auto max-w-3xl px-5 py-6 text-muted">{error || 'Loading…'}</main>
+  if (!data) return <main className="w-full p-3 text-muted">{error || 'Loading…'}</main>
   const rows = [
     ['Consultations signed off', `${data.consultations} (${data.live_consultations} live, ${data.demo_consultations} demo)`],
     ['Live consultations with a measured time', data.timed_consultations],
@@ -28,7 +28,7 @@ export default function Analytics() {
     ['Language mix', Object.entries(data.language_mix).map(([k, v]) => `${k}: ${v}`).join(', ') || 'none yet'],
   ]
   return (
-    <main className="mx-auto max-w-3xl space-y-5 px-5 py-6">
+    <main className="grid w-full gap-3 p-3 lg:grid-cols-[1fr_1.6fr]">
       <section className="card space-y-3">
         <div className="eyebrow">Typing baseline (enter once)</div>
         <div className="flex gap-2">
@@ -36,7 +36,7 @@ export default function Analytics() {
           <button className="btn-ink" disabled={!baseline} onClick={save}>Save</button>
         </div>
         <p className="text-xs text-muted">How many minutes you normally spend typing one record by hand. Without it, no minutes-saved figure is shown.</p>
-        {error && <p className="text-sm text-red-700" role="alert">{error}</p>}
+        {error && <p className="text-sm text-red-700 dark:text-red-300 dark:text-red-300" role="alert">{error}</p>}
       </section>
       <section className="card">
         <table className="w-full text-sm"><tbody>
