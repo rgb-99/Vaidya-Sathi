@@ -1,7 +1,7 @@
 """Run the full pipeline on the synthetic scenarios and report measured metrics.
   python eval/run_eval.py --all                 # text mode: scenario scripts go straight to structure() (LLM calls only)
   python eval/run_eval.py --all --mode audio    # needs eval/audio/*.wav from eval/synthesize_audio.py; adds STT
-  options: --only E01,R01  --workers 4  --diarize  --keyterms  --keyterms-ab
+  options: --only E01,R01  --workers 4  --diarize  --keyterms  --keyterms-ab  --no-latest
 Exit status is 1 when the regression gate fails (any hallucination, or a headline metric down by more than 2 points)."""
 import argparse
 import re
@@ -197,6 +197,7 @@ def main():
     ap.add_argument('--diarize', action='store_true')
     ap.add_argument('--keyterms', action='store_true')
     ap.add_argument('--keyterms-ab', action='store_true')
+    ap.add_argument('--no-latest', action='store_true', help='write only eval/results/, leave eval/reports/latest.json alone')
     a = ap.parse_args()
     if not (a.all or a.only):
         ap.error('pass --all or --only IDS')
@@ -224,7 +225,7 @@ def main():
     }
     failures = report.gate(rep, report.load_latest())
     rep['gate'] = {'passed': not failures, 'failures': failures}
-    path = report.write(rep)
+    path = report.write(rep, latest=not a.no_latest)
     m = rep['metrics']
     print(f"run {rep['run_id']}  mode={a.mode}  scenarios={len(scenarios)}  -> {path.relative_to(ROOT)}")
     for k in ('overall_f1', 'drug_exact', 'dose_exact', 'redflag_precision', 'redflag_recall', 'hallucinations', 'speaker_accuracy', 'extraction_failures'):

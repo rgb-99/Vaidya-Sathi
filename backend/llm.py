@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 import config
 import formulary
+import masking
 import mock_data
 import sarvam_client
 from rapidfuzz import fuzz
@@ -94,16 +95,20 @@ def parse_json(text):
     return json.loads(text[a:b + 1])
 
 
-def _structure(transcript, roles=False):
+def _structure(transcript, roles=False, known_names=()):
     """Returns (record, evidence). Retries once with the error appended, then an empty record + warning."""
     if config.MOCK_MODE:
         return mock_data.scenario_record(mock_data.scenario_for_transcript(transcript)), []
-    user, err = transcript, ''
+    masker = masking.Masker(known_names) if config.ENABLE_PII_MASKING else None
+    sent = masker.mask(transcript) if masker else transcript   # the chat model only ever sees this
+    user, err = sent, ''
     for attempt in range(2):
         try:
             raw = sarvam_client.chat(config.LLM_MODEL, system_prompt(roles), user, temperature=0, max_tokens=4096,
                                      reasoning_effort=None)  # extraction needs no thinking; it also ran away on tokens
             data = parse_json(raw)
+            if masker:
+                data = masker.unmask(data)   # tokens back to the real text; quotes are then checked against the ORIGINAL transcript
             data.pop('red_flags', None)  # red flags come only from the deterministic rules
             evidence = data.pop('evidence', [])
             rec = ClinicalRecord.model_validate(data)
@@ -113,7 +118,7 @@ def _structure(transcript, roles=False):
         except (ValueError, ValidationError) as e:
             err = str(e)[:300]
             log.info('structure attempt %d failed: %s', attempt + 1, err)
-            user = f'{transcript}\n\nYour previous output was invalid ({err}). Output ONLY the JSON object.'
+            user = f'{sent}\n\nYour previous output was invalid ({err}). Output ONLY the JSON object.'
     return ClinicalRecord(warnings=['Automatic extraction failed. Please fill the form by hand from the transcript.']), []
 
 
@@ -185,7 +190,7 @@ def enforce_clinician_orders(rec, utterances):
     rec.prescription = kept
 
 
-def structure(transcript, utterances=None):
+def structure(transcript, utterances=None, known_names=()):
     """Transcript (+ optional diarized turns) -> ClinicalRecord with said/inferred and an audit trail.
     With clinician/patient roles the role-aware prompt is used; without them, the role-free prompt."""
     turns = [u for u in (utterances or []) if u.text.strip()]
@@ -195,7 +200,7 @@ def structure(transcript, utterances=None):
         transcript = '\n'.join(f'{label[u.speaker]}: {u.text}' for u in turns)
     else:
         turns = [Utterance(id='u1', text=transcript)]
-    rec, evidence = _structure(transcript, roles)
+    rec, evidence = _structure(transcript, roles, known_names)
     rec.utterances = turns  # also lets /redflags see symptom keywords after edits
     if roles and not rec.warnings:
         enforce_clinician_orders(rec, turns)

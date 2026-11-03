@@ -30,7 +30,7 @@ def gate(report, previous):
     return failures
 
 
-def write(report):
+def write(report, latest=True):
     """Timestamped copy in eval/results/ (git-ignored) and eval/reports/latest.json (committed, with the previous run's metrics)."""
     prev = load_latest()
     report['previous'] = {'run_id': prev['run_id'], 'mode': prev['mode'], 'metrics': prev['metrics']} if prev else None
@@ -38,8 +38,9 @@ def write(report):
     (ROOT / 'reports').mkdir(exist_ok=True)
     text = json.dumps(report, indent=2, ensure_ascii=False)
     (ROOT / 'results' / f"{report['run_id']}.json").write_text(text, encoding='utf-8')
-    latest_path().write_text(text, encoding='utf-8')
-    return latest_path()
+    if latest:
+        latest_path().write_text(text, encoding='utf-8')
+    return latest_path() if latest else ROOT / 'results' / f"{report['run_id']}.json"
 
 
 def run_id():
