@@ -10,7 +10,10 @@ export default {
         accent: { DEFAULT: v('accent'), dark: v('accent-dark'), soft: v('accent-soft') },
       },
       fontFamily: {
-        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Noto Sans', 'Noto Sans Devanagari', 'sans-serif'],
+        // Neue Montreal is a commercial font and is not bundled: it is used where installed, otherwise the next one applies.
+        // 'Noto Sans Devanagari' is kept near the end so Marathi and Hindi text still renders well.
+        sans: ['"Neue Montreal"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+          '"Open Sans"', '"Helvetica Neue"', '"Noto Sans Devanagari"', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
     },
