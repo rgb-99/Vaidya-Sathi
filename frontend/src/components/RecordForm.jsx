@@ -55,6 +55,9 @@ export default function RecordForm({ record, onChange, locked }) {
       <Field label="Advice (one per line)">
         <textarea className="input" rows={2} disabled={locked} value={lines(record.advice)} onChange={(e) => set({ advice: unlines(e.target.value) })} />
       </Field>
+      <Field label="Allergies (one per line, checked against the prescription)">
+        <textarea className="input" rows={1} disabled={locked} value={lines(record.allergies)} onChange={(e) => set({ allergies: unlines(e.target.value) })} />
+      </Field>
       <Field label="Follow-up">
         <input className="input" disabled={locked} value={record.follow_up} onChange={(e) => set({ follow_up: e.target.value })} />
       </Field>

@@ -37,6 +37,7 @@ CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'http://localhost:5173')
 PUBLIC_BASE_URL = os.getenv('PUBLIC_BASE_URL', 'http://localhost:5173')
 SHARE_TOKEN_TTL_DAYS = int(os.getenv('SHARE_TOKEN_TTL_DAYS', '7'))
 
+PRODUCTION_MODE = _bool('PRODUCTION_MODE')   # true: safety rules without a reviewer are ignored
 ENABLE_DIARIZATION = _bool('ENABLE_DIARIZATION')
 ENABLE_KEYTERMS = _bool('ENABLE_KEYTERMS')
 ENABLE_STREAMING = _bool('ENABLE_STREAMING')

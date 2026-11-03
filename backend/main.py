@@ -7,10 +7,10 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -19,13 +19,16 @@ import card
 import config
 import db
 import export
+import ics
 import mock_data
 import sarvam_client
 import llm
 import redflags
+import safety
+import share
 import signoff
 import voice
-from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, StructureRequest,
+from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, ShareRequest, StructureRequest,
                      SignoffRequest, SummaryRequest, SummaryResponse)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -99,6 +102,7 @@ async def structure(req: StructureRequest):
         rec = await run_in_threadpool(llm.structure, req.transcript, req.utterances)
     with timed('redflags'):
         rec.red_flags = redflags.check(rec)
+    rec.safety_warnings = safety.check(rec)
     return rec
 
 
@@ -180,6 +184,49 @@ def records():
 @app.get('/api/tickets')
 def tickets():
     return db.list_tickets()
+
+
+@app.post('/api/safety')
+def safety_route(record: ClinicalRecord):
+    """Prescription safety warnings for the clinician. Never changes the prescription."""
+    return {'safety_warnings': safety.check(record)}
+
+
+@app.post('/api/share')
+async def create_share(req: ShareRequest):
+    require_signed(req.record)
+    if req.language not in config.LANGUAGES:
+        raise HTTPException(400, f'Unsupported language {req.language}.')
+    text, fallback = await run_in_threadpool(llm.summarize, req.record, req.language)
+    spoken = llm.spoken_language(req.language, fallback)
+    try:
+        audio = base64.b64encode(await run_in_threadpool(voice.speak, text, spoken)).decode()
+    except sarvam_client.SarvamError:
+        audio = ''   # the page still shows the written schedule
+    return share.create(req.record, text, audio, spoken, req.include_diagnosis)
+
+
+@app.get('/api/share/{token}')
+def public_share(token: str, request: Request):
+    """Public, read-only. 404 when unknown or expired. Not indexed, not cached, rate-limited."""
+    headers = {'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'no-store'}
+    if not share.allow(request.client.host if request.client else 'unknown'):
+        return JSONResponse({'error': 'Too many requests. Try again in a minute.'}, status_code=429, headers=headers)
+    payload = share.get(token)
+    if payload is None:
+        return JSONResponse({'error': 'This link has expired or does not exist.'}, status_code=404, headers=headers)
+    return JSONResponse(payload, headers=headers)
+
+
+@app.get('/api/schedule.ics')
+def schedule_ics(record_id: int):
+    data = db.get_record(record_id)
+    if data is None:
+        raise HTTPException(404, 'Record not found.')
+    record = ClinicalRecord.model_validate(data)
+    require_signed(record)
+    return Response(ics.build(record), media_type='text/calendar',
+                    headers={'Content-Disposition': 'attachment; filename="medicine-reminders.ics"'})
 
 
 @app.post('/api/card', response_class=HTMLResponse)

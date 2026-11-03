@@ -38,3 +38,6 @@ export const getCardHtml = async (record) => {
   if (!res.ok) throw new Error('Could not build the printable card.')
   return res.text()
 }
+
+export const safety = (record) => post('/safety', record)
+export const share = (record, language, include_diagnosis) => post('/share', { record, language, include_diagnosis })

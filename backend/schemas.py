@@ -108,3 +108,9 @@ class ReferralRequest(BaseModel):
 class SignoffRequest(BaseModel):
     record: ClinicalRecord
     clinician_name: str = ''
+
+
+class ShareRequest(BaseModel):
+    record: ClinicalRecord
+    language: str = 'mr-IN'
+    include_diagnosis: bool = False   # the clinician must tick this; off by default

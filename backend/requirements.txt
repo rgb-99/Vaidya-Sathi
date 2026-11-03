@@ -6,3 +6,4 @@ python-dotenv
 sarvamai
 rapidfuzz
 pytest
+segno

@@ -14,7 +14,8 @@ def _conn():
     c.row_factory = sqlite3.Row
     c.executescript(
         'CREATE TABLE IF NOT EXISTS records(id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT, json TEXT);'
-        'CREATE TABLE IF NOT EXISTS tickets(id TEXT PRIMARY KEY, created_at TEXT, record_id INTEGER, payload_json TEXT);')
+        'CREATE TABLE IF NOT EXISTS tickets(id TEXT PRIMARY KEY, created_at TEXT, record_id INTEGER, payload_json TEXT);'
+        'CREATE TABLE IF NOT EXISTS shares(token TEXT PRIMARY KEY, created_at TEXT, expires_at TEXT, payload_json TEXT);')
     return c
 
 
@@ -53,3 +54,14 @@ def list_tickets():
         rows = c.execute('SELECT * FROM tickets ORDER BY created_at DESC').fetchall()
     return [{'ticket_id': r['id'], 'created_at': r['created_at'], 'record_id': r['record_id'],
              'payload': json.loads(r['payload_json'])} for r in rows]
+
+
+def save_share(token, created_at, expires_at, payload_json):
+    with _conn() as c:
+        c.execute('INSERT INTO shares(token, created_at, expires_at, payload_json) VALUES (?, ?, ?, ?)',
+                  (token, created_at, expires_at, payload_json))
+
+
+def get_share(token):
+    with _conn() as c:
+        return c.execute('SELECT * FROM shares WHERE token = ?', (token,)).fetchone()

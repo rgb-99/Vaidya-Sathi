@@ -7,6 +7,7 @@ import RedFlagBanner from './components/RedFlagBanner.jsx'
 import DiarizedTranscript from './components/DiarizedTranscript.jsx'
 import EvalPage from './components/EvalPage.jsx'
 import History from './components/History.jsx'
+import SafetyWarnings from './components/SafetyWarnings.jsx'
 import SaidInferred from './components/SaidInferred.jsx'
 import SignOff from './components/SignOff.jsx'
 import SummaryPlayer from './components/SummaryPlayer.jsx'
@@ -27,6 +28,8 @@ export default function App() {
   const [confirmed, setConfirmed] = useState(false)
   const [recordId, setRecordId] = useState(null)
   const [view, setView] = useState('consult')
+  const [shareInfo, setShareInfo] = useState(null)
+  const [includeDx, setIncludeDx] = useState(false)
   const [summary, setSummary] = useState(null)
   const [alertSrc, setAlertSrc] = useState('')
   const [ticket, setTicket] = useState(null)
@@ -59,7 +62,7 @@ export default function App() {
   const pickScenario = async (id) => {
     setScenarioId(id)
     setTranscript(''); setUtterances([])
-    setRecord(null); setConfirmed(false); setRecordId(null); setSummary(null); setAlertSrc(''); setTicket(null)
+    setRecord(null); setConfirmed(false); setRecordId(null); setSummary(null); setAlertSrc(''); setTicket(null); setShareInfo(null)
     const s = scenarios.find((x) => x.id === id)
     if (!s) return
     if (!s.audio_url) return setTranscript(s.transcript)
@@ -89,6 +92,7 @@ export default function App() {
     clearTimeout(flagTimer.current)
     flagTimer.current = setTimeout(() => {
       api.redflags(next).then((r) => setRecord((cur) => cur && { ...cur, red_flags: r.red_flags })).catch((e) => setError(e.message))
+      api.safety(next).then((r) => setRecord((cur) => cur && { ...cur, safety_warnings: r.safety_warnings })).catch(() => {})
     }, 400)
   }
 
@@ -103,6 +107,7 @@ export default function App() {
     setRecordId(r.id)
     setConfirmed(true)
   })
+  const makeShare = () => run('share', async () => setShareInfo(await api.share(record, lang, includeDx)))
   const makeTicket = () => run('referral', async () => setTicket(await api.referral(record, recordId)))
   const printCard = () => run('card', async () => {
     const html = await api.getCardHtml(record)
@@ -166,6 +171,7 @@ export default function App() {
           {record ? (
             <>
               <RedFlagBanner flags={record.red_flags} onPlay={playAlert} />
+              <SafetyWarnings warnings={record.safety_warnings} />
               {alertSrc && <audio controls autoPlay src={alertSrc} className="w-full" />}
               <RecordForm record={record} onChange={onRecordChange} locked={confirmed} />
               <SaidInferred record={record} />
@@ -178,6 +184,20 @@ export default function App() {
           <div className="eyebrow">03 — Patient summary</div>
           <SummaryPlayer summary={summary} audioSrc={summary?.audio_base64 ? wavSrc(summary.audio_base64) : ''}
             canGenerate={confirmed} onGenerate={genSummary} busy={busy === 'summary'}>
+            {confirmed && (
+              <div className="space-y-2 rounded-xl border border-line bg-bg p-3">
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={includeDx} onChange={(e) => setIncludeDx(e.target.checked)} /> Include diagnosis on the patient page</label>
+                <button disabled={busy === 'share'} onClick={makeShare} className="btn-ink w-full">{busy === 'share' ? 'Creating…' : 'Create patient share link'}</button>
+                {shareInfo && (
+                  <div className="space-y-2 text-sm">
+                    <img alt="QR code for the patient page" className="mx-auto h-40 w-40" src={`data:image/png;base64,${shareInfo.qr_png_base64}`} />
+                    <a className="link break-all" href={shareInfo.url} target="_blank" rel="noreferrer">{shareInfo.url}</a>
+                    <div className="text-muted">Expires {new Date(shareInfo.expires_at).toLocaleDateString()}</div>
+                  </div>
+                )}
+                <a className="link block text-sm" href={`/api/schedule.ics?record_id=${recordId}`}>Download reminder calendar (.ics)</a>
+              </div>
+            )}
             {confirmed && <a className="btn-outline w-full" href={`/api/export/${recordId}.json`} target="_blank" rel="noreferrer">Export (FHIR-inspired JSON)</a>}
             {confirmed && <button disabled={busy === 'card'} onClick={printCard} className="btn-outline w-full">Print medicine card</button>}
             {confirmed && urgent && (

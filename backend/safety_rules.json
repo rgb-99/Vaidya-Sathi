@@ -1,0 +1,12 @@
+{
+  "_note": "Demo-grade prescription safety rules. Every rule needs reviewed_by and source; in production mode (PRODUCTION_MODE=true) rules without a reviewer are ignored. Dose limits stay EMPTY until filled from a cited reference, never from memory.",
+  "rules": [
+    {"id": "SAFE_DUPLICATE_DRUG", "type": "duplicate_drug", "title": "Same medicine listed twice", "reviewed_by": "", "source": "Common prescribing practice (demo rule)"},
+    {"id": "SAFE_CLASS_BETA_BLOCKER", "type": "same_class", "class": "beta blocker", "drugs": ["Metoprolol", "Atenolol"], "title": "Two beta blockers", "reviewed_by": "", "source": "Drug class membership (demo rule)"},
+    {"id": "SAFE_CLASS_ARB", "type": "same_class", "class": "angiotensin receptor blocker", "drugs": ["Telmisartan", "Losartan"], "title": "Two angiotensin receptor blockers", "reviewed_by": "", "source": "Drug class membership (demo rule)"},
+    {"id": "SAFE_CLASS_STATIN", "type": "same_class", "class": "statin", "drugs": ["Atorvastatin", "Rosuvastatin"], "title": "Two statins", "reviewed_by": "", "source": "Drug class membership (demo rule)"},
+    {"id": "SAFE_CLASS_PPI", "type": "same_class", "class": "proton pump inhibitor", "drugs": ["Pantoprazole", "Omeprazole"], "title": "Two proton pump inhibitors", "reviewed_by": "", "source": "Drug class membership (demo rule)"},
+    {"id": "SAFE_ALLERGY", "type": "allergy", "title": "Prescribed medicine matches a stated allergy", "reviewed_by": "", "source": "Stated allergy entered by the clinician (demo rule)"}
+  ],
+  "max_daily_dose": []
+}
