@@ -44,7 +44,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-### 3. Frontend
+### 3. Frontend (or both at once: `./scripts/dev.sh`, Windows `.\scripts\dev.ps1`)
 
 ```bash
 cd frontend
@@ -80,9 +80,7 @@ python scripts/synthesize_demo_clips.py  # regenerate the synthetic stand-in cli
 
 STT mode chosen: `codemix` (provisional, from 3 synthetic clips; see `docs/DECISIONS.md`). Change it with `STT_MODE` in `.env`.
 
-> Status (M1): `/api/transcribe` is real when `MOCK_MODE=false` (browser recording or file upload, up to 180 s). Structuring, summary, red flags, alert audio and referral are still canned or 501.
->
-> Status (M0): every `/api` route returns canned data in mock mode. With `MOCK_MODE=false`, routes not yet implemented for real return `501`.
+> **Status:** the full pipeline is real when `MOCK_MODE=false`: transcription (M1), structured extraction (M2), patient summary and speech (M3), deterministic red flags and spoken alerts (M4), demo picker (M5). `MOCK_MODE=true` returns canned data for every step with no key and no network. Referral tickets are still mock data; history, sign-off, share page and the other advanced features are not built yet.
 
 ---
 
@@ -97,6 +95,8 @@ See [`.env.example`](.env.example) for all variables. Key ones:
 | `STT_MODEL` | Speech-to-text model (default: `saaras:v4`) |
 | `LLM_MODEL` | LLM for structuring (default: `sarvam-105b`) |
 | `TTS_MODEL` | Text-to-speech model (default: `bulbul:v4-flash`) |
+| `TTS_SPEAKER_MR/HI/EN` | Voices per language (API-verified, not yet auditioned) |
+| `STT_MODE` | `codemix` (provisional choice, see `docs/DECISIONS.md`) |
 
 ---
 

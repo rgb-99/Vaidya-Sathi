@@ -26,7 +26,7 @@ export default function App() {
 
   useEffect(() => {
     api.health().then((h) => setMock(h.mock)).catch((e) => setError(e.message))
-    api.getScenarios().then(setScenarios).catch(() => {})
+    api.getScenarios().then(setScenarios).catch((e) => setError(e.message))
   }, [])
 
   const run = async (name, fn) => {
@@ -35,10 +35,20 @@ export default function App() {
     try { await fn() } catch (e) { setError(e.message) } finally { setBusy('') }
   }
 
-  const pickScenario = (id) => {
+  // Picking a demo scenario sends its prerecorded clip through the real pipeline (STT is canned in mock mode).
+  const pickScenario = async (id) => {
     setScenarioId(id)
-    setTranscript(scenarios.find((s) => s.id === id)?.transcript || '')
+    setTranscript('')
     setRecord(null); setConfirmed(false); setSummary(null); setAlertSrc(''); setTicket(null)
+    const s = scenarios.find((x) => x.id === id)
+    if (!s) return
+    if (!s.audio_url) return setTranscript(s.transcript)
+    await run('transcribe', async () => {
+      const clip = await fetch(s.audio_url)
+      if (!clip.ok) throw new Error('Could not load the demo clip.')
+      const r = await api.transcribe(await clip.blob(), `${id}.wav`)
+      setTranscript(r.transcript)
+    })
   }
 
   const onAudio = (blob, filename) =>
@@ -92,7 +102,12 @@ export default function App() {
         </p>
       </header>
 
-      {error && <div className="border-b border-red-200 bg-red-50 px-5 py-2 text-center text-sm text-red-900" role="alert">{error}</div>}
+      {error && (
+        <div className="flex items-center justify-center gap-3 border-b border-red-200 bg-red-50 px-5 py-2 text-sm text-red-900" role="alert">
+          <span>{error}</span>
+          <button className="link" onClick={() => setError('')}>Dismiss</button>
+        </div>
+      )}
 
       <main className="mx-auto grid max-w-7xl gap-5 px-5 py-6 md:grid-cols-3">
         <section className="card space-y-4">

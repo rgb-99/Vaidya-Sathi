@@ -147,9 +147,17 @@ def referral(req: ReferralRequest):
 
 @app.get('/api/demo/scenarios')
 def demo_scenarios():
-    require_mock('/api/demo/scenarios')
-    return [{'id': sid, 'title': s['title'], 'audio_url': '/demo/audio/mock.wav',
-             'transcript': s['transcript']} for sid, s in mock_data.SCENARIOS.items()]
+    """S1 to S3 with their prerecorded clip (demo/audio/<id>.wav) so the picker can run the whole pipeline."""
+    demo = Path(__file__).resolve().parent.parent / 'demo'
+    out = []
+    for sid, s in mock_data.SCENARIOS.items():
+        ref = demo / 'transcripts' / f'{sid}.txt'
+        out.append({
+            'id': sid, 'title': s['title'],
+            'audio_url': f'/demo/audio/{sid}.wav' if (demo / 'audio' / f'{sid}.wav').exists() else '',
+            'transcript': s['transcript'] if config.MOCK_MODE or not ref.exists() else ref.read_text(encoding='utf-8').strip(),
+        })
+    return out
 
 
 @app.get('/api/records')

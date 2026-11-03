@@ -1,6 +1,11 @@
 // Calls the backend using the contract in SPEC TRD section 6.
 async function request(path, options) {
-  const res = await fetch('/api' + path, options)
+  let res
+  try {
+    res = await fetch('/api' + path, options)
+  } catch {
+    throw new Error('Cannot reach the server. Check that the backend is running and your network is up.')
+  }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
   return data
