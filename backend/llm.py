@@ -2,6 +2,7 @@
 import json
 import logging
 import re
+import unicodedata
 
 from pydantic import ValidationError
 
@@ -9,10 +10,10 @@ import config
 import formulary
 import mock_data
 import sarvam_client
-from schemas import ClinicalRecord
+from schemas import ClinicalRecord, Provenance, Utterance
 
 log = logging.getLogger('vaidya')
-PROMPT_VERSION = 'v1'
+PROMPT_VERSION = 'v2'
 SHAPE_KEYS = ['patient', 'chief_complaints', 'vitals', 'diagnosis', 'prescription', 'advice', 'follow_up', 'language_detected']
 
 # SPEC TRD 8.1, plus one line on spoken numbers (STT writes them as words; see DECISIONS.md).
@@ -25,8 +26,22 @@ EXTRACTION_PROMPT = (
     '"नव्वद बाय साठ" is 90/60). Write temperature as the number only. Output ONLY valid JSON matching this shape, '
     'with no commentary and no code fences: patient{name,age,sex}, chief_complaints[], vitals{bp,temp,spo2,pulse,'
     'resp_rate,sugar}, diagnosis, prescription[{drug,dose,frequency,timing,duration}], advice[], follow_up, '
-    'language_detected.'
+    'language_detected, evidence[{field,quote}]. Evidence has one entry for every non-empty value you output: field '
+    'is its path (for example vitals.bp, chief_complaints.0, prescription.1.dose, advice.0, follow_up) and quote is '
+    'copied exactly, character for character, from the transcript.'
 )
+
+# Hand-written evidence for the two few-shot examples (checked to be verbatim substrings by a test).
+EXAMPLE_EVIDENCE = {
+    'S1': {'chief_complaints.0': 'doke dukhtay', 'vitals.bp': '150/95 ahe', 'advice.0': 'Salt kami kara',
+           'prescription.0.drug': 'Metoprolol', 'prescription.0.dose': '50mg', 'prescription.0.frequency': 'ek goli',
+           'prescription.0.timing': 'morning madhe', 'prescription.0.duration': '30 divas',
+           'prescription.1.drug': 'Amlodipine', 'prescription.1.dose': '5mg',
+           'prescription.1.frequency': 'Amlodipine 5mg raatri jevnanantar', 'prescription.1.timing': 'raatri jevnanantar',
+           'follow_up': 'Don aathvadyanni parat ya'},
+    'S2': {'chief_complaints.0': 'fever', 'chief_complaints.1': 'breathlessness', 'vitals.temp': '102 fever',
+           'vitals.bp': 'BP 90/60', 'vitals.pulse': 'pulse 118'},
+}
 
 
 def _examples():
@@ -34,8 +49,9 @@ def _examples():
     for sid in ('S1', 'S2'):  # S3 is held out of the prompt so the eval stays honest
         s = mock_data.SCENARIOS[sid]
         rec = ClinicalRecord(**s['record']).model_dump()
-        out.append(f"Example transcript:\n{s['transcript']}\nExample output:\n"
-                   + json.dumps({k: rec[k] for k in SHAPE_KEYS}, ensure_ascii=False))
+        shown = {k: rec[k] for k in SHAPE_KEYS}
+        shown['evidence'] = [{'field': f, 'quote': q} for f, q in EXAMPLE_EVIDENCE[sid].items()]
+        out.append(f"Example transcript:\n{s['transcript']}\nExample output:\n" + json.dumps(shown, ensure_ascii=False))
     return '\n\n'.join(out)
 
 
@@ -53,25 +69,89 @@ def parse_json(text):
     return json.loads(text[a:b + 1])
 
 
-def structure(transcript):
-    """Transcript -> ClinicalRecord. Retries once with the error appended, then returns an empty record + warning."""
+def _structure(transcript):
+    """Returns (record, evidence). Retries once with the error appended, then an empty record + warning."""
     if config.MOCK_MODE:
-        return mock_data.scenario_record(mock_data.scenario_for_transcript(transcript))
+        return mock_data.scenario_record(mock_data.scenario_for_transcript(transcript)), []
     user, err = transcript, ''
     for attempt in range(2):
         try:
-            raw = sarvam_client.chat(config.LLM_MODEL, system_prompt(), user, temperature=0, max_tokens=4096)
+            raw = sarvam_client.chat(config.LLM_MODEL, system_prompt(), user, temperature=0, max_tokens=4096,
+                                     reasoning_effort=None)  # extraction needs no thinking; it also ran away on tokens
             data = parse_json(raw)
             data.pop('red_flags', None)  # red flags come only from the deterministic rules
+            evidence = data.pop('evidence', [])
             rec = ClinicalRecord.model_validate(data)
             for rx in rec.prescription:
                 rx.drug = formulary.normalize(rx.drug)
-            return rec
+            return rec, evidence if isinstance(evidence, list) else []
         except (ValueError, ValidationError) as e:
             err = str(e)[:300]
             log.info('structure attempt %d failed: %s', attempt + 1, err)
             user = f'{transcript}\n\nYour previous output was invalid ({err}). Output ONLY the JSON object.'
-    return ClinicalRecord(warnings=['Automatic extraction failed. Please fill the form by hand from the transcript.'])
+    return ClinicalRecord(warnings=['Automatic extraction failed. Please fill the form by hand from the transcript.']), []
+
+
+# ------------------------------------------------ said vs inferred, audit trail (M7)
+def _norm(text):
+    return ' '.join(unicodedata.normalize('NFC', text or '').translate(str.maketrans('०१२३४५६७८९', '0123456789')).lower().split())
+
+
+def leaf_fields(rec):
+    """(path, value) for every non-empty extracted value."""
+    for k, v in rec.patient.model_dump().items():
+        yield f'patient.{k}', v
+    for i, c in enumerate(rec.chief_complaints):
+        yield f'chief_complaints.{i}', c
+    for k, v in rec.vitals.model_dump().items():
+        yield f'vitals.{k}', v
+    yield 'diagnosis', rec.diagnosis
+    for i, rx in enumerate(rec.prescription):
+        for k, v in rx.model_dump().items():
+            yield f'prescription.{i}.{k}', v
+    for i, a in enumerate(rec.advice):
+        yield f'advice.{i}', a
+    yield 'follow_up', rec.follow_up
+
+
+def literal_quote(value, transcript):
+    """The transcript sentence that literally contains the value, or ''. Whitespace and case are ignored."""
+    v = _norm(value)
+    for sentence in re.split(r'(?<=[.?!।\n])', transcript):
+        if v and v in _norm(sentence):
+            return sentence.strip()
+    return ''
+
+
+def attach_evidence(rec, evidence, transcript):
+    """Fill said / inferred / provenance. A value is `said` only if its quote is a verbatim substring of the
+    transcript (checked here by the machine, not trusted from the LLM); everything else is labelled unverified."""
+    claimed = {e['field']: e['quote'] for e in evidence if isinstance(e, dict) and isinstance(e.get('field'), str)
+               and isinstance(e.get('quote'), str)}
+    norm_transcript = _norm(transcript)
+    rec.said, rec.inferred, rec.provenance = [], [], {}
+    for path, value in leaf_fields(rec):
+        if not value or not str(value).strip():
+            continue
+        quote = claimed.get(path, '')
+        if not quote or _norm(quote) not in norm_transcript:
+            quote = literal_quote(str(value), transcript)
+        if quote and _norm(quote) in norm_transcript:
+            rec.said.append(f'{path}: {value}')
+            rec.provenance[path] = Provenance(source_utterance_ids=['u1'], model=config.LLM_MODEL, prompt_version=PROMPT_VERSION,
+                                              quote=quote, start=norm_transcript.find(_norm(quote)))
+        else:
+            rec.inferred.append(f'Unverified, no matching quote - {path}: {value}')
+    return rec
+
+
+def structure(transcript):
+    """Transcript -> ClinicalRecord with the transcript, evidence-checked said/inferred and an audit trail."""
+    rec, evidence = _structure(transcript)
+    rec.utterances = [Utterance(id='u1', text=transcript)]  # also lets /redflags see symptom keywords after edits
+    if not rec.warnings:
+        attach_evidence(rec, evidence, transcript)
+    return rec
 
 
 # ---------------------------------------------------------------- summary (M3)

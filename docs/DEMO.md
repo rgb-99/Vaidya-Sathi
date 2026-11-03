@@ -19,15 +19,15 @@
 **0:20 Consultation S1 (50 s).**
 1. Press **Record**, role-play S1 (or pick **S1** in the demo picker, which runs the prerecorded clip), press **Stop**. The transcript appears in the editable panel.
 2. Press **Extract record**. Show complaints, BP 150/95, two prescription rows, advice.
-3. Edit one field, press **Confirm record** (the form locks).
+3. Edit one field. Point at the **Said / AI-suggested** panel (each said fact shows its transcript quote). Type the clinician name and press **Sign off and lock record** (the form locks; summary, referral and export need this).
 
 **1:10 Patient summary (30 s).** Press **Generate patient summary**, play the audio. Switch the language to Hindi, press **Generate** again. Point out simple words and the morning, afternoon, night schedule.
 
-**1:40 Emergency S2 (50 s).** Pick **S2**, press **Extract record**. A red banner shows RF_SEPSIS and RF_HYPOTENSION with the matched inputs. Press **Play alert**. Press **Confirm record**, then **Create referral ticket**.
+**1:40 Emergency S2 (50 s).** Pick **S2**, press **Extract record**. A red banner shows RF_SEPSIS and RF_HYPOTENSION with the matched inputs. Press **Play alert**. Type a clinician name, press **Sign off and lock record**, then **Create referral ticket**. **Export** downloads the FHIR-inspired JSON.
 
 **2:30 Close (30 s).** "Decision support, not decision making. Red flags are fixed rules, the doctor always reviews, built on Sarvam voice and language models."
 
-Not built yet (do not demo): clinician sign-off, share page, history, prescription photos.
+Also built: **History** tab, **Print medicine card**. Not built yet (do not demo): share page, prescription photos, streaming, offline capture.
 
 ## Fallbacks
 

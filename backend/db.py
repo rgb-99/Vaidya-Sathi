@@ -27,6 +27,12 @@ def save_record(record):
         return c.execute('INSERT INTO records(created_at, json) VALUES (?, ?)', (_now(), record.model_dump_json())).lastrowid
 
 
+def get_record(record_id):
+    with _conn() as c:
+        row = c.execute('SELECT * FROM records WHERE id = ?', (record_id,)).fetchone()
+    return json.loads(row['json']) if row else None
+
+
 def list_records():
     with _conn() as c:
         rows = c.execute('SELECT * FROM records ORDER BY id DESC').fetchall()

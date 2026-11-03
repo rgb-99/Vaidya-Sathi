@@ -4,7 +4,7 @@ export default function SummaryPlayer({ summary, audioSrc, canGenerate, onGenera
       <button disabled={!canGenerate || busy} onClick={onGenerate} className="btn-accent w-full">
         {busy ? 'Generating…' : 'Generate patient summary'}
       </button>
-      {!canGenerate && <p className="text-xs text-muted">Confirm the record first.</p>}
+      {!canGenerate && <p className="text-xs text-muted">Sign off the record first.</p>}
       {summary?.used_fallback && <p className="text-xs text-muted">Built from a fixed template because the AI summary failed the safety check.</p>}
       {summary && <p className="rounded-xl border border-line bg-bg p-4 text-base leading-relaxed">{summary.text}</p>}
       {summary && !audioSrc && (

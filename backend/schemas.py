@@ -48,6 +48,8 @@ class Provenance(BaseModel):
     source_utterance_ids: List[str] = []
     model: str = ''
     prompt_version: str = ''
+    quote: str = ''               # verbatim transcript text that supports the field (machine-checked)
+    start: int | None = None      # offset of the quote in the normalized transcript
 
 
 class ClinicalRecord(BaseModel):
@@ -68,6 +70,7 @@ class ClinicalRecord(BaseModel):
     provenance: dict[str, Provenance] = {}   # keyed by field path (F25)
     signed_off_by: str = ''
     signed_at: str = ''           # set only by /signoff, never by the LLM
+    signature: str = ''           # server HMAC proving sign-off; verified by summary, referral, export
     safety_warnings: List[RedFlag] = []      # F24, reuses the RedFlag model
     warnings: List[str] = []                 # visible pipeline warnings, e.g. extraction failed
 
@@ -88,7 +91,6 @@ class StructureRequest(BaseModel):
 class SummaryRequest(BaseModel):
     record: ClinicalRecord
     language: Literal['mr-IN', 'hi-IN', 'en-IN'] = 'mr-IN'
-    confirmed: bool = False
 
 
 class AlertAudioRequest(BaseModel):
@@ -100,3 +102,8 @@ class ReferralRequest(BaseModel):
     record: ClinicalRecord
     confirmed: bool = False
     record_id: int | None = None
+
+
+class SignoffRequest(BaseModel):
+    record: ClinicalRecord
+    clinician_name: str = ''

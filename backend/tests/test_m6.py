@@ -10,7 +10,11 @@ import card
 import db
 import main
 import mock_data
-from schemas import ReferralRequest
+from schemas import ReferralRequest, SignoffRequest
+
+
+def signed(sid):
+    return main.sign_off(SignoffRequest(record=mock_data.scenario_record(sid), clinician_name='Dr Test'))
 
 
 @pytest.fixture(autouse=True)
@@ -27,7 +31,7 @@ def test_unconfirmed_referral_is_400():
 
 
 def test_confirmed_referral_creates_and_persists_ticket():
-    t = main.referral(ReferralRequest(record=mock_data.scenario_record('S2'), confirmed=True))
+    t = main.referral(ReferralRequest(record=signed('S2')['record'], confirmed=True))
     assert t['destination'] == 'District Hospital' and t['ticket_id'].startswith('T-')
     assert {f['rule_id'] for f in t['payload']['red_flags']} == {'RF_SEPSIS', 'RF_HYPOTENSION'}
     saved = db.list_tickets()
@@ -35,14 +39,13 @@ def test_confirmed_referral_creates_and_persists_ticket():
 
 
 def test_referral_links_an_already_saved_record():
-    rid = main.confirm_record(mock_data.scenario_record('S2'))['id']
-    main.referral(ReferralRequest(record=mock_data.scenario_record('S2'), confirmed=True, record_id=rid))
-    assert len(db.list_records()) == 1 and db.list_tickets()[0]['record_id'] == rid
+    s = signed('S2')
+    main.referral(ReferralRequest(record=s['record'], confirmed=True, record_id=s['id']))
+    assert len(db.list_records()) == 1 and db.list_tickets()[0]['record_id'] == s['id']
 
 
 def test_records_persist_newest_first():
-    a = main.confirm_record(mock_data.scenario_record('S1'))['id']
-    b = main.confirm_record(mock_data.scenario_record('S3'))['id']
+    a, b = signed('S1')['id'], signed('S3')['id']
     rows = main.records()
     assert [r['id'] for r in rows] == [b, a]
     assert rows[1]['record']['prescription'][0]['drug'] == 'Metoprolol'

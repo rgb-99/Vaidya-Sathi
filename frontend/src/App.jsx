@@ -5,6 +5,8 @@ import Recorder from './components/Recorder.jsx'
 import RecordForm from './components/RecordForm.jsx'
 import RedFlagBanner from './components/RedFlagBanner.jsx'
 import History from './components/History.jsx'
+import SaidInferred from './components/SaidInferred.jsx'
+import SignOff from './components/SignOff.jsx'
 import SummaryPlayer from './components/SummaryPlayer.jsx'
 
 const LANGS = [['mr-IN', 'Marathi'], ['hi-IN', 'Hindi'], ['en-IN', 'English']]
@@ -83,8 +85,10 @@ export default function App() {
     const r = await api.alertAudio(record.red_flags, lang)
     setAlertSrc(wavSrc(r.audio_base64))
   })
-  const confirm = () => run('confirm', async () => {
-    setRecordId((await api.saveRecord(record)).id)
+  const signOff = (name) => run('signoff', async () => {
+    const r = await api.signoff(record, name)
+    setRecord(r.record)
+    setRecordId(r.id)
     setConfirmed(true)
   })
   const makeTicket = () => run('referral', async () => setTicket(await api.referral(record, recordId)))
@@ -151,9 +155,8 @@ export default function App() {
               <RedFlagBanner flags={record.red_flags} onPlay={playAlert} />
               {alertSrc && <audio controls autoPlay src={alertSrc} className="w-full" />}
               <RecordForm record={record} onChange={onRecordChange} locked={confirmed} />
-              <button disabled={confirmed || busy === 'confirm'} onClick={confirm} className="btn-ink w-full">
-                {confirmed ? 'Record confirmed' : 'Confirm record'}
-              </button>
+              <SaidInferred record={record} />
+              <SignOff record={record} onSign={signOff} busy={busy === 'signoff'} />
             </>
           ) : <p className="text-sm text-muted">Extract a record from the transcript to begin.</p>}
         </section>
@@ -162,6 +165,7 @@ export default function App() {
           <div className="eyebrow">03 — Patient summary</div>
           <SummaryPlayer summary={summary} audioSrc={summary?.audio_base64 ? wavSrc(summary.audio_base64) : ''}
             canGenerate={confirmed} onGenerate={genSummary} busy={busy === 'summary'}>
+            {confirmed && <a className="btn-outline w-full" href={`/api/export/${recordId}.json`} target="_blank" rel="noreferrer">Export (FHIR-inspired JSON)</a>}
             {confirmed && <button disabled={busy === 'card'} onClick={printCard} className="btn-outline w-full">Print medicine card</button>}
             {confirmed && urgent && (
               <div className="space-y-3 rounded-xl border border-line bg-bg p-4">

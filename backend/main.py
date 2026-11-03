@@ -17,13 +17,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import card
 import config
 import db
+import export
 import mock_data
 import sarvam_client
 import llm
 import redflags
+import signoff
 import voice
-from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, StructureRequest, Utterance,
-                     SummaryRequest, SummaryResponse)
+from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, StructureRequest,
+                     SignoffRequest, SummaryRequest, SummaryResponse)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 log = logging.getLogger('vaidya')
@@ -41,6 +43,12 @@ def timed(step):
         yield
     finally:
         log.info('step=%s duration_ms=%d', step, (time.perf_counter() - t0) * 1000)
+
+
+def require_signed(record):
+    """Server-side gate: summary audio, referral, export and share need a verified clinician sign-off."""
+    if not signoff.is_signed(record):
+        raise HTTPException(403, 'Clinician sign-off is required (and the record must not change after signing).')
 
 
 def require_mock(route):
@@ -87,9 +95,7 @@ async def transcribe(audio: UploadFile = File(...)):
 @app.post('/api/structure')
 async def structure(req: StructureRequest):
     with timed('structure'):
-        rec = await run_in_threadpool(llm.structure, req.transcript)
-        # Keep the transcript on the record so later /redflags re-runs can still see symptom keywords.
-        rec.utterances = [Utterance(id='u1', text=req.transcript)]
+        rec = await run_in_threadpool(llm.structure, req.transcript)  # also stores the transcript in rec.utterances
     with timed('redflags'):
         rec.red_flags = redflags.check(rec)
     return rec
@@ -103,8 +109,7 @@ def redflags_route(record: ClinicalRecord):
 
 @app.post('/api/summary', response_model=SummaryResponse)
 async def summary(req: SummaryRequest):
-    if not req.confirmed:
-        raise HTTPException(400, 'The clinician must confirm the record before a patient summary is generated.')
+    require_signed(req.record)
     with timed('summary'):
         text, fallback = await run_in_threadpool(llm.summarize, req.record, req.language)
     with timed('speak'):
@@ -132,6 +137,7 @@ async def alert_audio(req: AlertAudioRequest):
 def referral(req: ReferralRequest):
     if req.confirmed is not True:
         raise HTTPException(400, 'Referral requires confirmed=true.')
+    require_signed(req.record)
     with timed('referral'):
         rec = req.record
         record_id = req.record_id if req.record_id is not None else db.save_record(rec)
@@ -142,10 +148,24 @@ def referral(req: ReferralRequest):
         })
 
 
-@app.post('/api/records')
-def confirm_record(record: ClinicalRecord):
-    """Called when the clinician confirms the record: persists it and returns its id."""
-    return {'id': db.save_record(record)}
+@app.post('/api/signoff')
+def sign_off(req: SignoffRequest):
+    """Locks the record: sets signed_off_by, signed_at and the signature, and saves it to history."""
+    try:
+        signed = signoff.sign(req.record, req.clinician_name)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {'record': signed, 'id': db.save_record(signed)}
+
+
+@app.get('/api/export/{record_id}.json')
+def export_record(record_id: int):
+    data = db.get_record(record_id)
+    if data is None:
+        raise HTTPException(404, 'Record not found.')
+    record = ClinicalRecord.model_validate(data)
+    require_signed(record)
+    return export.bundle(record, record_id)
 
 
 @app.get('/api/records')

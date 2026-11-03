@@ -55,7 +55,11 @@ def _call(fn):
             raise SarvamError(msg, 502)
 
 
-def chat(model, system, user, temperature=None, max_tokens=None):
+_DEFAULT = object()
+
+
+def chat(model, system, user, temperature=None, max_tokens=None, reasoning_effort=_DEFAULT):
+    """reasoning_effort: 'low'/'medium'/'high', or None to switch thinking off (docs.sarvam.ai chat completions)."""
     if config.MOCK_MODE:
         return '{}'
     messages = []
@@ -63,6 +67,8 @@ def chat(model, system, user, temperature=None, max_tokens=None):
         messages.append({'role': 'system', 'content': system})
     messages.append({'role': 'user', 'content': user})
     extra = {k: v for k, v in (('temperature', temperature), ('max_tokens', max_tokens)) if v is not None}
+    if reasoning_effort is not _DEFAULT:
+        extra['reasoning_effort'] = reasoning_effort
     r = _call(lambda: _get_client().chat.completions(model=model, messages=messages, **extra))
     return r.choices[0].message.content
 
