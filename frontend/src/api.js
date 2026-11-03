@@ -20,6 +20,6 @@ export const transcribe = (blob, filename) => {
 
 export const structure = (transcript) => post('/structure', { transcript })
 export const redflags = (record) => post('/redflags', record)
-export const summary = (record, language) => post('/summary', { record, language })
+export const summary = (record, language) => post('/summary', { record, language, confirmed: true })
 export const alertAudio = (red_flags, language) => post('/alert-audio', { red_flags, language })
 export const referral = (record) => post('/referral', { record, confirmed: true })

@@ -101,13 +101,19 @@ def redflags(record: ClinicalRecord):
 
 
 @app.post('/api/summary', response_model=SummaryResponse)
-def summary(req: SummaryRequest):
-    require_mock('/api/summary')
+async def summary(req: SummaryRequest):
+    if not req.confirmed:
+        raise HTTPException(400, 'The clinician must confirm the record before a patient summary is generated.')
     with timed('summary'):
-        text = mock_data.SUMMARIES[mock_data.scenario_for_record(req.record)][req.language]
-        audio = sarvam_client.tts(text, req.language)
-        return SummaryResponse(text=text, language=req.language,
-                               audio_base64=base64.b64encode(audio).decode())
+        text, fallback = await run_in_threadpool(llm.summarize, req.record, req.language)
+    with timed('speak'):
+        try:
+            audio = await run_in_threadpool(voice.speak, text, req.language)
+            return SummaryResponse(text=text, language=req.language, used_fallback=fallback,
+                                   audio_base64=base64.b64encode(audio).decode())
+        except sarvam_client.SarvamError as e:  # keep the text so the clinician can still read it out
+            return SummaryResponse(text=text, language=req.language, used_fallback=fallback,
+                                   audio_base64='', audio_error=str(e))
 
 
 @app.post('/api/alert-audio')

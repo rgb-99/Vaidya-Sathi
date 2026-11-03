@@ -75,7 +75,9 @@ class ClinicalRecord(BaseModel):
 class SummaryResponse(BaseModel):
     text: str
     language: str
-    audio_base64: str    # wav
+    audio_base64: str    # wav, empty if text-to-speech failed
+    audio_error: str = ''
+    used_fallback: bool = False
 
 
 # Request bodies for the section 6 routes
@@ -86,6 +88,7 @@ class StructureRequest(BaseModel):
 class SummaryRequest(BaseModel):
     record: ClinicalRecord
     language: Literal['mr-IN', 'hi-IN', 'en-IN'] = 'mr-IN'
+    confirmed: bool = False
 
 
 class AlertAudioRequest(BaseModel):

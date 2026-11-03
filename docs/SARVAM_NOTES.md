@@ -116,7 +116,7 @@ wav_bytes = base64.b64decode("".join(r.audios))
 - [ ] List all valid speaker names per language. (Partly: the SDK type lists 200+ names; on 2026-11-03 these worked with `bulbul:v4-flash`: mr-IN `ishita_mr_conversational`, `nilesh_mr_conversation`; hi-IN `rahul_hi_conversational`, `amit_hi_conversational`, `kavya_hi_conversational`. Short names such as `ritu`, `shubh`, `rahul` were rejected with 400. en-IN still to test. Do not set `TTS_SPEAKER_*` until M3 listening tests.)
 - [ ] Confirm diarization parameter name. (Batch API only, `num_speakers`; REST has none. Details still to read for M8.)
 - [x] Confirm key-term prompting parameter name. (`keyterms`, v4 only.)
-- [ ] List all supported TTS languages.
-- [ ] Pick one verified speaker per language (mr-IN, hi-IN, en-IN) and put them in `.env`.
+- [x] List all supported TTS languages. (SDK type for `bulbul:v4-flash` calls: bn-IN, en-IN, gu-IN, hi-IN, kn-IN, ml-IN, mr-IN, od-IN, pa-IN, ta-IN, te-IN. Verify against the docs Voices page before M8.)
+- [x] Pick one verified speaker per language (mr-IN, hi-IN, en-IN) and put them in `.env`. (Set in `.env.example`: `ishita_mr_conversational`, `kavya_hi_conversational`, `ritu_en_medical`. API-verified, NOT yet listened to: run `python scripts/test_voice.py <lang> <speaker> "text"` and swap if they sound wrong.)
       Test each with `python scripts/test_voice.py mr-IN <speaker> "नमस्कार"`.
 

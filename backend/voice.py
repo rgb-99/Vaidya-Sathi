@@ -1,6 +1,8 @@
 """Speech-to-text pipeline. Audio lives only in a temp dir that is deleted before returning."""
+import io
 import re
 import subprocess
+import wave
 import tempfile
 from collections import Counter
 from pathlib import Path
@@ -126,3 +128,47 @@ def transcribe(audio_bytes, filename):
             'transcript': ' '.join(r['transcript'].strip() for r in results if r['transcript'].strip()),
             'language': Counter(langs).most_common(1)[0][0] if langs else '',
         }
+
+
+TTS_MAX_CHARS = 2000  # Bulbul REST limit is 2,500 characters per request; keep a margin
+
+
+def split_sentences(text, max_chars=TTS_MAX_CHARS):
+    """Split on sentence boundaries into pieces of at most max_chars (hard-split only if a sentence is longer)."""
+    sentences = [s.strip() for s in re.findall(r'[^.?!।\n]+[.?!।]?', text) if s.strip()]
+    pieces, cur = [], ''
+    for s in sentences:
+        while len(s) > max_chars:
+            if cur:
+                pieces.append(cur)
+                cur = ''
+            pieces.append(s[:max_chars])
+            s = s[max_chars:]
+        if cur and len(cur) + 1 + len(s) > max_chars:
+            pieces.append(cur)
+            cur = ''
+        cur = f'{cur} {s}'.strip()
+    if cur:
+        pieces.append(cur)
+    return pieces
+
+
+def join_wavs(wavs):
+    if len(wavs) == 1:
+        return wavs[0]
+    out, params = io.BytesIO(), None
+    with wave.open(out, 'wb') as w:
+        for data in wavs:
+            with wave.open(io.BytesIO(data)) as r:
+                if params is None:
+                    params = r.getparams()
+                    w.setparams(params)
+                w.writeframes(r.readframes(r.getnframes()))
+    return out.getvalue()
+
+
+def speak(text, language):
+    """Text -> WAV bytes in the configured voice for the language. Mock mode returns the bundled WAV."""
+    if config.MOCK_MODE:
+        return sarvam_client.tts(text, language)
+    return join_wavs([sarvam_client.tts(p, language) for p in split_sentences(text)])

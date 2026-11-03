@@ -124,7 +124,7 @@ export default function App() {
 
         <section className="card space-y-4">
           <div className="eyebrow">03 — Patient summary</div>
-          <SummaryPlayer summary={summary} audioSrc={summary && wavSrc(summary.audio_base64)}
+          <SummaryPlayer summary={summary} audioSrc={summary?.audio_base64 ? wavSrc(summary.audio_base64) : ''}
             canGenerate={confirmed} onGenerate={genSummary} busy={busy === 'summary'}>
             {confirmed && urgent && (
               <div className="space-y-3 rounded-xl border border-line bg-bg p-4">
