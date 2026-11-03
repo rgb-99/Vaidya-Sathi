@@ -5,6 +5,7 @@ import Recorder from './components/Recorder.jsx'
 import RecordForm from './components/RecordForm.jsx'
 import RedFlagBanner from './components/RedFlagBanner.jsx'
 import DiarizedTranscript from './components/DiarizedTranscript.jsx'
+import EvalPage from './components/EvalPage.jsx'
 import History from './components/History.jsx'
 import SaidInferred from './components/SaidInferred.jsx'
 import SignOff from './components/SignOff.jsx'
@@ -121,7 +122,7 @@ export default function App() {
           <h1 className="text-xl font-semibold tracking-tight">Vaidya Saathi</h1>
           {mock && <span className="rounded-full bg-orange-100 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider text-orange-800">mock mode</span>}
           <nav className="flex gap-1 text-sm">
-            {[['consult', 'Consultation'], ['history', 'History']].map(([v, label]) => (
+            {[['consult', 'Consultation'], ['history', 'History'], ['eval', 'Eval']].map(([v, label]) => (
               <button key={v} onClick={() => setView(v)} className={`rounded-full px-3 py-1.5 ${view === v ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}>{label}</button>
             ))}
           </nav>
@@ -144,7 +145,7 @@ export default function App() {
         </div>
       )}
 
-      {view === 'history' ? <History /> : (
+      {view === 'history' ? <History /> : view === 'eval' ? <EvalPage /> : (
       <main className="mx-auto grid max-w-7xl gap-5 px-5 py-6 md:grid-cols-3">
         <section className="card space-y-4">
           <div className="eyebrow">01 — Record</div>

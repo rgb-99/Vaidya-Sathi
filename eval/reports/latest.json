@@ -1,0 +1,659 @@
+{
+  "run_id": "20261103T141228Z",
+  "mode": "text",
+  "scenario_count": 32,
+  "synthetic": "All scenarios are synthetic scripts; no audio or STT in this run (text mode).",
+  "config": {
+    "llm_model": "sarvam-105b",
+    "stt_model": "saaras:v4",
+    "stt_mode": "codemix",
+    "prompt_version": "v2",
+    "diarization": false,
+    "keyterms": false
+  },
+  "metrics": {
+    "overall_f1": 95.6,
+    "per_field": {
+      "complaints": {
+        "precision": 97.3,
+        "recall": 97.3,
+        "expected": 37,
+        "f1": 97.3
+      },
+      "vitals": {
+        "precision": 100.0,
+        "recall": 100.0,
+        "expected": 38,
+        "f1": 100.0
+      },
+      "drug": {
+        "precision": 96.9,
+        "recall": 100.0,
+        "expected": 31,
+        "f1": 98.4
+      },
+      "dose": {
+        "precision": 96.9,
+        "recall": 100.0,
+        "expected": 31,
+        "f1": 98.4
+      },
+      "timing": {
+        "precision": 87.5,
+        "recall": 90.3,
+        "expected": 31,
+        "f1": 88.9
+      },
+      "duration": {
+        "precision": 90.6,
+        "recall": 93.5,
+        "expected": 31,
+        "f1": 92.1
+      },
+      "advice": {
+        "precision": 93.1,
+        "recall": 93.1,
+        "expected": 29,
+        "f1": 93.1
+      },
+      "follow_up": {
+        "precision": 95.0,
+        "recall": 95.0,
+        "expected": 20,
+        "f1": 95.0
+      }
+    },
+    "drug_exact": 100.0,
+    "dose_exact": 100.0,
+    "hallucinations": 0,
+    "hallucination_items": [],
+    "redflag_precision": 100.0,
+    "redflag_recall": 100.0,
+    "speaker_accuracy": null,
+    "keyterms_drug_names": null,
+    "extraction_failures": 0,
+    "latency_s": {
+      "redflags": {
+        "p50": 0.0,
+        "p95": 0.0,
+        "n": 32
+      },
+      "structure": {
+        "p50": 4.21,
+        "p95": 7.59,
+        "n": 32
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "E03",
+      "missed": [
+        [
+          "complaints",
+          "",
+          "giddiness"
+        ],
+        [
+          "timing",
+          "amlodipine",
+          "morning"
+        ],
+        [
+          "duration",
+          "amlodipine",
+          "30 days"
+        ],
+        [
+          "timing",
+          "telmisartan",
+          "night, after food"
+        ],
+        [
+          "duration",
+          "telmisartan",
+          "30 days"
+        ],
+        [
+          "advice",
+          "",
+          "low salt"
+        ],
+        [
+          "advice",
+          "",
+          "walk daily"
+        ],
+        [
+          "follow_up",
+          "",
+          "1 month"
+        ]
+      ],
+      "extra": [
+        [
+          "complaints",
+          "",
+          "चक्कर येतात"
+        ],
+        [
+          "timing",
+          "amlodipine",
+          "सकाळी"
+        ],
+        [
+          "duration",
+          "amlodipine",
+          "30 दिवस"
+        ],
+        [
+          "timing",
+          "telmisartan",
+          "रात्री जेवणानंतर"
+        ],
+        [
+          "duration",
+          "telmisartan",
+          "30 दिवस"
+        ],
+        [
+          "advice",
+          "",
+          "मीठ कमी खा"
+        ],
+        [
+          "advice",
+          "",
+          "रोज चाला"
+        ],
+        [
+          "follow_up",
+          "",
+          "एका महिन्यानंतर परत या"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 16
+    },
+    {
+      "id": "E06",
+      "missed": [],
+      "extra": [
+        [
+          "drug",
+          "",
+          "Metformin"
+        ],
+        [
+          "dose",
+          "metformin",
+          "500mg"
+        ],
+        [
+          "timing",
+          "metformin",
+          "evening"
+        ],
+        [
+          "duration",
+          "metformin",
+          "30 days"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 4
+    },
+    {
+      "id": "N02",
+      "missed": [
+        [
+          "timing",
+          "metformin",
+          "morning and evening, after food"
+        ]
+      ],
+      "extra": [
+        [
+          "timing",
+          "metformin",
+          "morning, after dinner"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 2
+    },
+    {
+      "id": "E01",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E02",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E04",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E05",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E07",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E08",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E09",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E10",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E11",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E12",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E13",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E14",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R01",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_SEPSIS",
+        "RF_HYPOTENSION"
+      ],
+      "flags_predicted": [
+        "RF_HYPOTENSION",
+        "RF_SEPSIS"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R02",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_SEPSIS"
+      ],
+      "flags_predicted": [
+        "RF_SEPSIS"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R03",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_HYPOTENSION"
+      ],
+      "flags_predicted": [
+        "RF_HYPOTENSION"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R04",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_HYPERTENSIVE"
+      ],
+      "flags_predicted": [
+        "RF_HYPERTENSIVE"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R05",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_HYPOXIA"
+      ],
+      "flags_predicted": [
+        "RF_HYPOXIA"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R06",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_HIGH_FEVER"
+      ],
+      "flags_predicted": [
+        "RF_HIGH_FEVER"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R07",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_HYPERGLYCEMIA"
+      ],
+      "flags_predicted": [
+        "RF_HYPERGLYCEMIA"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R08",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_CHEST_PAIN"
+      ],
+      "flags_predicted": [
+        "RF_CHEST_PAIN"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R09",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_DEHYDRATION"
+      ],
+      "flags_predicted": [
+        "RF_DEHYDRATION"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "R10",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_DEHYDRATION"
+      ],
+      "flags_predicted": [
+        "RF_DEHYDRATION"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "N01",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "N03",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "N04",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_SEPSIS",
+        "RF_HYPOTENSION"
+      ],
+      "flags_predicted": [
+        "RF_HYPOTENSION",
+        "RF_SEPSIS"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "F01",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "F02",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "F03",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "F04",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [
+        "RF_HYPERTENSIVE"
+      ],
+      "flags_predicted": [
+        "RF_HYPERTENSIVE"
+      ],
+      "extraction_failed": false,
+      "issues": 0
+    }
+  ],
+  "gate": {
+    "passed": true,
+    "failures": []
+  },
+  "previous": {
+    "run_id": "20261103T141132Z",
+    "mode": "text",
+    "metrics": {
+      "overall_f1": 90.1,
+      "per_field": {
+        "complaints": {
+          "precision": 94.6,
+          "recall": 94.6,
+          "expected": 37,
+          "f1": 94.6
+        },
+        "vitals": {
+          "precision": 100.0,
+          "recall": 97.4,
+          "expected": 38,
+          "f1": 98.7
+        },
+        "drug": {
+          "precision": 100.0,
+          "recall": 100.0,
+          "expected": 31,
+          "f1": 100.0
+        },
+        "dose": {
+          "precision": 100.0,
+          "recall": 100.0,
+          "expected": 31,
+          "f1": 100.0
+        },
+        "timing": {
+          "precision": 83.9,
+          "recall": 83.9,
+          "expected": 31,
+          "f1": 83.9
+        },
+        "duration": {
+          "precision": 93.5,
+          "recall": 93.5,
+          "expected": 31,
+          "f1": 93.5
+        },
+        "advice": {
+          "precision": 51.7,
+          "recall": 51.7,
+          "expected": 29,
+          "f1": 51.7
+        },
+        "follow_up": {
+          "precision": 95.0,
+          "recall": 95.0,
+          "expected": 20,
+          "f1": 95.0
+        }
+      },
+      "drug_exact": 100.0,
+      "dose_exact": 100.0,
+      "hallucinations": 0,
+      "hallucination_items": [],
+      "redflag_precision": 100.0,
+      "redflag_recall": 100.0,
+      "speaker_accuracy": null,
+      "keyterms_drug_names": null,
+      "extraction_failures": 0,
+      "latency_s": {
+        "redflags": {
+          "p50": 0.0,
+          "p95": 0.0,
+          "n": 32
+        },
+        "structure": {
+          "p50": 4.16,
+          "p95": 7.42,
+          "n": 32
+        }
+      }
+    }
+  }
+}

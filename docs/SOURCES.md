@@ -19,30 +19,30 @@
 
 ### Extraction Accuracy
 
-**Value:** _TBD — fill from eval run_
-**Source:** `eval/results/latest.json`, field `per_field_f1`
-**Verified:** No — run evaluation first
+**Value:** overall field F1 95.6% over 32 synthetic scenarios, text mode (no STT), run 20261103T141228Z
+**Source:** `eval/reports/latest.json`, `metrics.overall_f1` and `metrics.per_field`
+**Verified:** Yes for text mode only; audio-mode numbers pending
 **Used in:** Pitch slide 6
 
 ### Zero Hallucinated Drugs
 
-**Value:** 0 hallucinated drugs across _N_ test runs
-**Source:** `eval/results/latest.json`, field `hallucination_count`
-**Verified:** No — run evaluation first
+**Value:** 0 hallucinations (unverified drug, dose, vital, diagnosis or patient detail) across 32 synthetic scenarios, text mode, run 20261103T141228Z
+**Source:** `eval/reports/latest.json`, `metrics.hallucinations`
+**Verified:** Yes for text mode only
 **Used in:** Pitch slide 6
 
 ### Red-Flag Precision and Recall
 
-**Value:** _TBD — fill from eval run_
-**Source:** `eval/results/latest.json`, fields `redflag_precision`, `redflag_recall`
-**Verified:** No — run evaluation first
+**Value:** precision 100.0%, recall 100.0% on 32 synthetic scenarios (expected flags hand-written from the rule table), run 20261103T141228Z
+**Source:** `eval/reports/latest.json`, `metrics.redflag_precision`, `metrics.redflag_recall`
+**Verified:** Yes for text mode; the rules are demo-grade and clinician review is pending
 **Used in:** Pitch slide 6
 
 ### End-to-End Latency
 
-**Value:** _TBD — fill from eval run_
-**Source:** `eval/results/latest.json`, fields `p50_latency_s`, `p95_latency_s`
-**Verified:** No — run evaluation first
+**Value:** not yet measured end to end. Text mode measured only extraction (p50 4.21 s, p95 7.59 s); STT, summary and speech stages are not in the report yet
+**Source:** `eval/reports/latest.json`, `metrics.latency_s`
+**Verified:** No — run audio mode
 **Used in:** Pitch slide 6
 
 ### Minutes of Typing Saved
@@ -54,9 +54,9 @@
 
 ### Supported Languages
 
-**Value:** _TBD — read from Bulbul docs_
-**Source:** Sarvam Bulbul documentation, Voices page
-**Verified:** No — check docs
+**Value:** the app offers 9 languages (Marathi, Hindi, English, Bengali, Gujarati, Kannada, Punjabi, Tamil, Telugu). Bulbul also lists Malayalam and Odia, but no voice name was accepted by the API, so they are not offered
+**Source:** `sarvamai` SDK type for `text_to_speech.convert` and live API checks on 2026-11-03 (`docs/SARVAM_NOTES.md`)
+**Verified:** Voices accepted by the API, not auditioned by a listener
 **Used in:** Pitch slide 8
 
 ---

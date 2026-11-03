@@ -91,8 +91,8 @@ def stt(path, model=None, mode=None, language_code='unknown', keyterms=None):
     return {'transcript': r.transcript or '', 'language': r.language_code or ''}
 
 
-def tts(text, language_code, speaker=None, model=None):
-    """Returns WAV bytes."""
+def tts(text, language_code, speaker=None, model=None, **options):
+    """Returns WAV bytes. options (e.g. pace=1.3) are passed to the SDK."""
     if config.MOCK_MODE:
         return MOCK_WAV.read_bytes()
     speaker = speaker or config.TTS_SPEAKERS.get(language_code, '')
@@ -100,7 +100,7 @@ def tts(text, language_code, speaker=None, model=None):
         raise SarvamError(f'No TTS speaker configured for {language_code} (set TTS_SPEAKER_* in .env).', 500)
     model = model or config.TTS_MODEL
     r = _call(lambda: _get_client().text_to_speech.convert(
-        language_code=language_code, text=text, model=model, speaker=speaker))
+        language_code=language_code, text=text, model=model, speaker=speaker, **options))
     return base64.b64decode(''.join(r.audios))
 
 

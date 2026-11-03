@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 import time
 import uuid
@@ -184,6 +185,14 @@ def tickets():
 @app.post('/api/card', response_class=HTMLResponse)
 def prescription_card(record: ClinicalRecord):
     return card.render_card(record)
+
+
+@app.get('/api/eval/latest')
+def eval_latest():
+    path = Path(__file__).resolve().parent.parent / 'eval' / 'reports' / 'latest.json'
+    if not path.exists():
+        raise HTTPException(404, 'No evaluation report yet. Run: python eval/run_eval.py --all')
+    return json.loads(path.read_text(encoding='utf-8'))
 
 
 @app.get('/api/languages')
