@@ -72,34 +72,38 @@ A run **fails** if:
 
 ## Latest Results
 
-Committed report: `eval/reports/latest.json`, run `20261103T144437Z`, **audio mode** (Bulbul speech -> Saaras `codemix` with diarization -> extraction -> red flags), **32 synthetic scenarios**. All audio is synthetic speech (clean TTS, noise and fast variants included), not real clinic audio.
+Committed report: `eval/reports/latest.json`, run `20261103T150541Z`, **audio mode** (Bulbul speech -> Saaras `codemix` with diarization -> extraction -> red flags), **32 synthetic scenarios**. All audio is synthetic speech (clean TTS, noise and fast variants included), not real clinic audio. The code was final (prompt v3, PII masking on) for this run.
 
-| Metric | Audio mode (this report) | Text mode (earlier run `20261103T143616Z`, scripts straight to extraction) |
-| --- | --- | --- |
-| Overall field F1 | 91.5 % | 98.8 % |
-| Drug name exact match | 96.8 % | 100 % |
-| Dose exact match | 58.1 % | 100 % |
-| Red-flag precision / recall | 100.0 % / 100.0 % | 100 % / 100 % |
-| Hallucinations | 0 | 0 |
-| Extraction failures | 0 | 0 |
-| Speaker-label accuracy | 88.9 % | n/a |
-| Drug names heard, key terms off / on | 28/31 / 29/31 | n/a |
-| Latency p50 / p95: STT (diarized batch job) | 10.78 s / 28.54 s | n/a |
-| Latency p50 / p95: structure() | 3.29 s / 6.61 s | 4.4 s / 6.9 s |
+| Metric | This run | Previous audio run `20261103T144437Z` | Text mode (`20261103T143616Z` and `20261103T145613Z`; scripts straight to extraction, JSON not committed) |
+| --- | --- | --- | --- |
+| Overall field F1 | 90.9 % | 91.5 % | 98.8 %, 99.4 % |
+| Drug name exact match | 93.5 % | 96.8 % | 100 % |
+| Dose exact match | 58.1 % | 58.1 % | 100 % |
+| Red-flag precision / recall | 100.0 % / 100.0 % | 100 % / 100 % | 100 % / 100 % and 100 % / 92.9 % |
+| Hallucinations | 0 | 0 | 0 |
+| Extraction failures | 0 | 0 | 0 |
+| Speaker-label accuracy | 85.2 % | 88.9 % | n/a |
+| Drug names heard, key terms off / on | 28/31 / 29/31 | 28/31 / 29/31 | n/a |
+| Latency p50 / p95: STT (diarized batch job, 4 in parallel) | 13.95 s / 34.15 s | 10.8 s / 28.5 s | n/a |
+| Latency p50 / p95: structure() | 4.36 s / 6.84 s | 3.3 s / 6.6 s | 4.4 s / 6.9 s |
 
-The text-mode JSON is not committed (`eval/results/` is git-ignored); its numbers are recorded here and in `docs/DECISIONS.md`.
+**The regression gate FAILED on this run:** `drug_exact` fell from 96.8 to 93.5 (one more drug name misheard by the speech model: 93.5% of 31). Nothing between the two runs touches speech recognition, so this is run-to-run variation in the STT (the same audio does not always give the same transcript), not a code regression; the failed gate is kept in the committed report on purpose. Treat differences of a few points between runs as noise: two runs of the same audio gave 91.5 and 90.9 overall.
 
-### What the audio run showed (read before quoting anything)
+### Single-consultation latency (measured by hand, serial, no parallel jobs, 2026-11-03)
+
+Real calls, REST speech-to-text (no diarization), clips S1, S2, S3: speech-to-text 6.2, 0.7, 1.0 s; extraction 5.7, 3.0, 4.5 s; red flags under 0.01 s; summary 0.5, 1.0, 0.8 s; speech 8.1, 6.4, 11.9 s. **Capture to filled record: 11.9, 3.7, 5.5 s. To a spoken summary: 20.5, 11.1, 18.1 s.** STT time varies a lot between runs (S1 took 1.5 s in an earlier run). Source: `docs/DECISIONS.md`, M13 entry. Not part of `latest.json`.
+
+### What the audio runs showed (read before quoting anything)
 
 - **Dose exact match is low (58%) mostly because of formatting.** The STT writes "500 milligram" for a script that said "500mg" and the SPEC says doses are kept "exactly as spoken". It is also a gap in the summary post-check, which only recognizes mg, mcg, g and ml. A deterministic dose normalizer is proposed in `docs/DECISIONS.md` and **not applied**.
-- **A real wrong-drug error:** in E06 the STT wrote "Glycopyrrolate" for "Glimepiride". No automatic check catches this (the name is literally in the transcript). The clinician review step is the mitigation.
-- **Key terms:** one more drug name heard with them on (29 vs 28 of 31). One name is within noise on synthetic audio; no improvement is claimed.
-- **Latency:** STT p95 is above the 20 s end-to-end target. These runs used 4 parallel batch jobs per run, so a single consultation can be faster; not measured separately.
-- **Speaker labels:** 88.9% of reference turns got the right role (heuristic: whoever states drugs and doses is the clinician).
-- Red-flag results come from the deterministic rules over what was extracted. Expected flags were hand-written from the rule table.
+- **A real wrong-drug error:** in E06 the STT wrote "Glycopyrrolate" for "Glimepiride" in both runs. No automatic check catches this (the name is literally in the transcript). The clinician review step is the mitigation.
+- **Key terms:** one more drug name heard with them on (29 vs 28 of 31) in both runs. That is within noise; no improvement is claimed.
+- **Latency:** STT p95 in the harness is above the 20 s target because four batch jobs ran in parallel; see the serial numbers above for one consultation.
+- **Speaker labels:** 85 to 89% of reference turns got the right role (heuristic: whoever states drugs and doses is the clinician).
+- Red-flag results come from the deterministic rules over what was extracted. Expected flags were hand-written from the rule table. A text-mode run once missed a SpO2 value (recall 92.9), so a missed vital means a missed alert.
 
 ### How the metrics are defined
 
 - Facts are matched one-to-one inside each group; F1 is micro-averaged. Complaints and advice match on synonyms or a key word (for example "Eat less salt" counts for "low salt"), vitals, drug names and doses must match exactly after removing spaces, durations and follow-ups need the same number and unit. Frequency is not scored.
-- **Hallucination** = an unverified (no matching transcript quote) drug, dose, vital, diagnosis or patient detail. Unverified complaints, advice and timing (translated by the model) are listed in the JSON but not counted.
+- **Hallucination** = an unverified (no matching transcript quote) drug, dose, vital, diagnosis or patient detail. A wrong word that the STT really produced is not a hallucination by this definition. Unverified complaints, advice and timing (translated by the model) are listed in the JSON but not counted.
 - N and F scenarios repeat earlier scripts with noise (10 dB SNR) or fast speech (pace 1.4).

@@ -211,3 +211,26 @@ Run `20261103T144437Z`, audio mode, diarization on, 32 synthetic scenarios (see 
 **Built:** `analytics.py` + an Analytics tab. At sign-off the server stores one `consultations` row: start time (sent by the browser: the moment the transcript became available), sign-off time, measured seconds, whether it came from the demo picker, language, red-flag and urgent counts, safety warnings. The typing baseline (minutes) is entered once and stored in `settings`. **Minutes saved = baseline minus measured documentation time**, over live consultations that have a measured time; demo runs, runs with no start time and implausible durations (negative or over 4 h) are never included, and with no baseline or no measured run the panel says "not measured" instead of showing a number. A slower-than-baseline run shows as negative savings. Red-flag, warning and language counts cover every signed-off consultation.
 **Limits:** the start time comes from the browser clock; the figure measures time with the tool (transcript ready to sign-off), not the length of the consultation or recording; the baseline is the clinician's own estimate. The analytics table was added to the existing SQLite file.
 **Tests:** 252 pass (nothing measured, baseline required, demo and unmeasured exclusion, implausible durations, counts, negative savings, baseline validation).
+
+### 2026-11-03 — M13: definition-of-done audit (SPEC sections 17 and 19)
+
+Evidence is a test, a command output or a measured run. "Not verified" means I could not do it from the terminal.
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 17.1 | Fresh clone runs with MOCK_MODE=true, no key | Met | Cloned the repo into a temp folder, followed the README, 252 tests passed, backend and frontend started, full mock flow (transcribe, structure, sign-off, summary, alert audio, referral, share, export, ics, card) returned 200s |
+| 17.2 | With a key, S1, S2, S3 end to end under 20 s each | **Partly** | Audio to filled record 11.9, 3.7, 5.5 s. To a spoken summary 20.5, 11.1, 18.1 s, so S1 is 0.5 s over (STT time varies: S1 took 1.5 s in an earlier run). Single run each |
+| 17.3 | All tests pass; eval at 90% or above | **Partly** | 252 pass, 1 skipped (live eval, opt-in). Overall F1 90.9% in the final audio run (91.5% before; text mode 98.8 to 99.4%), but the harness regression gate FAILED on the final run (drug exact 96.8 to 93.5, speech-model variation) and dose exact match is 58.1% |
+| 17.4 | Red-flag banner correct on S2 and absent on S1 | Met in code, UI not viewed | `test_redflags.py`; live API on S1 to S3 (S2: SEPSIS + HYPOTENSION; S1, S3: none). I did not look at the banner in a browser |
+| 17.5 | Safety label visible; no invented drugs in any output | Met (label seen once in a screenshot) | Header strip in every view; 0 hallucinations in 3 evaluation runs; summary post-check tests. The summary check does not recognize doses written in words ("500 milligram"): see the M9 proposal |
+| 17.6 | README documents run steps, env vars, models, limits | Met | README |
+| 19.1 | 30+ scenarios, zero hallucinations, /eval page renders | Met (page not viewed) | 32 scenarios; `/api/eval/latest` returns the report; component builds |
+| 19.2 | Diarization labels visible and swappable; patient-only drug never in the prescription | Met in code and live API, UI not clicked | `test_m8.py`, live two-voice clip |
+| 19.3 | Share page works on a phone, no login, schedule and audio, expires | API met, phone not verified | `test_m10.py` (expiry 404, no leaks, rate limit); not opened on a phone |
+| 19.4 | Sign-off required before share, summary audio, export, referral | Met | `test_m7.py`, `test_m10.py`, live 403 on unsigned |
+| 19.5 | Safety checks fire on duplicate, same class, allergy, each tested | Met | `test_m10.py` one test per rule |
+| 19.6 | Offline capture queues and syncs without duplicates | Server met, browser not verified | `test_sync.py`, live duplicate check; IndexedDB queue and service worker never run in a browser |
+| 19.7 | Advanced features degrade gracefully, UI says what is off | Mostly met | Diarization failure falls back with a notice; streaming off returns a message; TTS failure shows the text with Retry; vision off hides the upload (the UI does not say why); mock mode everywhere |
+
+**Security pass:** key pattern searched in the whole tree and every commit: none. `.env` ignored and untracked. CORS limited to `CORS_ORIGIN`. Share tokens are 128-bit and expire. Tracked audio and images are all synthetic. No real PII. The key you pasted into the chat is only in your local `.env`; rotate it.
+**Left for you (needs a human):** listen to the voices in all three main languages; click through mic recording, live transcription, offline mode, printing and the share page on a phone; have a clinician review the rules and the Marathi and Hindi alert texts; decide on the proposed dose normalizer and the not-in-formulary warning.

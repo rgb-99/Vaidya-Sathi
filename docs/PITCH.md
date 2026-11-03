@@ -1,14 +1,14 @@
 # Pitch — Slide Text
 
-> Every number in this pitch must cite its source or an evaluation run.
-> Do not put unverified statistics on slides.
+> Every number here cites the committed evaluation report `eval/reports/latest.json` (run `20261103T150541Z`, 32 synthetic scenarios, audio mode) or an entry in [SOURCES.md](SOURCES.md).
+> The evaluation uses synthetic scripts and synthetic speech, not real clinic recordings. Say so on the slide.
 
 ---
 
 ## Slide 1: Title
 
 **Vaidya Saathi**
-Ambient clinical documentation, red-flag triage, and vernacular patient summaries.
+Ambient clinical documentation, red-flag triage support, and vernacular patient summaries.
 
 Built with Sarvam AI · Sarvam Campus x IIIT Pune '26
 
@@ -19,12 +19,11 @@ Built with Sarvam AI · Sarvam Campus x IIIT Pune '26
 **Doctors talk. But they also have to type.**
 
 - Indian OPD consultations happen in code-mixed Marathi, Hindi, and English.
-- Doctors manually type notes and prescriptions while talking to patients.
-- Patients leave with handwritten prescriptions full of shorthand (OD, BD, SOS) they don't understand.
+- Notes and prescriptions are typed or handwritten while talking to the patient.
+- Patients leave with prescriptions full of shorthand (OD, BD, SOS) they may not understand.
 - Frontline health workers may miss danger signs under pressure.
 
-> [!IMPORTANT]
-> Do not claim "40% of the day spent typing" or any other statistic unless it is sourced. See [SOURCES.md](SOURCES.md).
+_No statistic is quoted here because none is sourced (see [SOURCES.md](SOURCES.md))._
 
 ---
 
@@ -32,12 +31,12 @@ Built with Sarvam AI · Sarvam Campus x IIIT Pune '26
 
 **Vaidya Saathi: the doctor just talks.**
 
-1. **Record** — the consultation is captured as audio.
-2. **Transcribe** — Sarvam Saaras handles code-mixed speech.
-3. **Structure** — the clinical record fills automatically.
-4. **Review** — the doctor edits and confirms.
-5. **Speak** — the patient hears their medicine schedule in their own language.
-6. **Alert** — deterministic rules flag emergencies instantly.
+1. **Record** the consultation (or upload audio, or stream it live).
+2. **Transcribe** with Sarvam Saaras, code-mixed speech.
+3. **Structure**: the record fills in; every fact shows the transcript quote it came from, and anything without a quote is labelled unverified.
+4. **Review and sign off**: the doctor edits and signs; nothing downstream works without it.
+5. **Speak**: the patient hears the schedule in their language, or scans a QR code for a large-print page.
+6. **Alert**: fixed rules flag emergencies and show exactly what triggered them.
 
 ---
 
@@ -49,69 +48,73 @@ _(Run the demo as per [DEMO.md](DEMO.md))_
 
 ## Slide 5: How It Works
 
-- **Speech-to-Text:** Sarvam Saaras v4, code-mixed Marathi/Hindi/English.
-- **Structuring:** Sarvam LLM extracts fields into a strict schema. No hallucination — missing fields stay empty.
-- **Red Flags:** Deterministic rules (not AI). Shows the exact inputs that triggered the alert.
-- **Patient Summary:** Plain-language schedule in the patient's language via Sarvam Bulbul TTS.
-- **Human in the loop:** Clinician reviews and confirms before anything is final.
+- **Speech-to-text:** Sarvam Saaras v4 (`codemix` mode), with optional speaker separation (clinician and patient) and live streaming.
+- **Structuring:** Sarvam 105B returns a strict schema; missing fields stay empty; names and phone numbers are masked before the model sees the text.
+- **Red flags:** deterministic, human-written rules, never the language model. The banner shows the matched inputs.
+- **Patient summary:** the text may only restate the prescription: every drug and dose is machine-checked, with a fixed template as the fallback. Spoken with Bulbul v4-flash.
+- **Human in the loop:** summary audio, referral, share link and export require a clinician sign-off that the server verifies.
 
 ---
 
-## Slide 6: Technical Depth
+## Slide 6: Technical Depth (measured, synthetic data)
 
-- Extraction accuracy: _[cite eval run]_ on _[N]_ synthetic consultations.
-- Zero hallucinated drugs across _[N]_ test runs — _[cite eval run]_.
-- Red-flag precision: _[cite eval run]_. Recall: _[cite eval run]_.
-- p50 latency: _[cite eval run]_. p95: _[cite eval run]_.
-- Drug-name fuzzy matching against a local formulary.
-- Deterministic prescription safety checks (duplicate drugs, same-class, allergy).
+Source: `eval/reports/latest.json`, run `20261103T150541Z`, **32 synthetic consultations** (Marathi, Hindi, English; includes noisy and fast-speech variants), synthetic speech through the full pipeline.
 
-> [!IMPORTANT]
-> Fill in all bracketed numbers from the latest `eval/results/latest.json` before presenting.
+- Overall field F1: **90.9%** (an earlier run of the same audio: 91.5%).
+- Drug name exact match: **93.5%**. Dose exact match: **58.1%**, mostly because the speech model writes "500 milligram" for "500mg".
+- Hallucinations (unverified drug, dose, vital, diagnosis or patient detail): **0**.
+- Red-flag precision **100%**, recall **100%** (expected flags written by hand from the rule table).
+- Speaker-label accuracy: **85.2%**.
+- One consultation, measured serially on 3 demo clips: audio to filled record in **3.7 to 11.9 s**; to a spoken summary in **11.1 to 20.5 s** ([EVAL.md](EVAL.md)).
+- Known failures, shown on purpose: the speech model once heard "Glimepiride" as "Glycopyrrolate"; the clinician review step is the safeguard.
+- 252 automated tests; the evaluation harness has a regression gate (it failed on this run because of speech-model variation, and the report says so).
 
 ---
 
 ## Slide 7: Safety
 
 - **Decision support, not decision making.**
-- Red flags from fixed human-written rules, shown with the matched rule.
-- Patient summary only restates what the clinician prescribed.
-- Human confirmation required before summary audio or referral.
-- Demo uses only fake data.
-- All rules are demo-grade — clinician review required before real use.
+- Red flags from fixed human-written rules, shown with the matched inputs.
+- Patient summary only restates what the clinician prescribed (machine-checked).
+- Server-enforced clinician sign-off before summary audio, referral, share link and export.
+- Prescription safety warnings (duplicate drug, same class, allergy) are for the clinician only and never edit the prescription.
+- Demo uses only fake data; audio is processed in memory.
+- **All rules are demo-grade and have not been reviewed by a clinician.** Clinician review is required before any real use.
 
 ---
 
-## Slide 8: Impact
+## Slide 8: Reach
 
-- Minutes of typing saved per consultation: _[cite measured number from demo session]_.
-- Works in every language Bulbul supports: _[list from docs]_.
+- Voices verified with the Sarvam API in **9 languages**: Marathi, Hindi, English, Bengali, Gujarati, Kannada, Punjabi, Tamil, Telugu (not yet auditioned by a listener; Malayalam and Odia are not offered). Source: [SOURCES.md](SOURCES.md).
+- Patient share page: no login, large print, audio, expires after 7 days.
+- Offline-first capture queues recordings on the device for poor connectivity (server side tested; browser behaviour still to be verified).
 - Designed for government OPDs, PHCs, and ASHA workers.
-
-> Only show measured numbers, not claimed statistics.
+- **Minutes of typing saved:** not yet measured. The Analytics tab measures it from live use; no figure is claimed here.
 
 ---
 
 ## Slide 9: Built With Sarvam
 
-| Capability              | Sarvam Product        |
-| ----------------------- | --------------------- |
-| Speech-to-Text          | Saaras v4             |
-| Code-mixed transcription| Saaras v4             |
-| Clinical structuring    | sarvam-105b           |
-| Patient summary text    | sarvam-105b-conversations |
-| Voice read-back         | Bulbul v4-flash       |
-| Speaker diarization     | Saaras diarization    |
-| Prescription photo      | Document Intelligence |
+| Capability               | Sarvam product                    |
+| ------------------------ | --------------------------------- |
+| Speech-to-text           | Saaras v4 (`codemix` mode)        |
+| Speaker separation       | Saaras batch diarization          |
+| Live transcription       | Saaras streaming                  |
+| Clinical structuring     | sarvam-105b                       |
+| Patient summary text     | sarvam-105b-conversations         |
+| Voice read-back, alerts  | Bulbul v4-flash                   |
+| Prescription photo       | Document Intelligence (extract)   |
 
 ---
 
 ## Slide 10: What's Next
 
-- Clinician-reviewed safety rules for real deployment.
-- ABDM / FHIR-inspired export for health record systems.
-- Offline-first PWA for rural health centres with poor connectivity.
-- More languages, more voices, real-time streaming.
+- Clinician review of the red-flag and prescription safety rules, and of the Marathi and Hindi alert texts.
+- Validation on real (consented, de-identified) consultations and real handwriting; today's results are synthetic only.
+- A dose normalizer and a "drug not in the formulary" warning, both proposed in [DECISIONS.md](DECISIONS.md) and not yet built.
+- Fill the dose-limit table from a cited reference (it is deliberately empty).
+- Real deployment hardening: accounts, audit retention, durable rate limiting.
 
-> "Healthcare in India happens in every language. Vaidya Saathi listens in all of them."
+_The export is "FHIR-inspired" and makes no FHIR or ABDM compliance claim._
 
+> Healthcare in India happens in many languages. Vaidya Saathi is a first step, tested so far on Marathi, Hindi and English.
