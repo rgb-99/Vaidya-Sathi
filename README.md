@@ -331,7 +331,7 @@ Copy [`.env.example`](.env.example) to `.env`. Model names live in variables so 
 | "Microphone is not available" | The page must be on `https://` or `http://localhost`. |
 | "No speech was detected" | Record again closer to the microphone, or tap into **What was said** and type. |
 | "ffmpeg is not installed on the server" | Install ffmpeg and ffprobe and restart the backend. |
-| "Cannot reach the server" | Start the backend (`uvicorn main:app --reload --port 8000` in `backend/`). |
+| "Could not connect to the server" | The app already retried for about 10 seconds. Locally, start the backend (`uvicorn main:app --reload --port 8000` in `backend/`). On the live demo, check your connection and try again; the first request after a quiet period wakes the server and takes a few seconds. |
 | Wrong words in the transcript | Fix them in **What was said**, or go **Back** from Check, edit, and **Extract details** again. |
 | Doctor and patient labels swapped | Tap **Swap doctor / patient**. |
 | "Audio failed" on the summary | The text is still shown; tap **Retry**. |

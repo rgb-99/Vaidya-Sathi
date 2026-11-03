@@ -3,12 +3,25 @@
 export const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '')
 export const apiUrl = (path) => API_BASE + path
 
+// Requests that are safe to repeat are retried when the connection drops or the server is still starting (a hosted
+// backend that scaled to zero takes a few seconds to wake). Calls that store something (sign-off, referral, share,
+// baseline) are never retried, so they cannot be created twice.
+const RETRY_DELAYS_MS = [1000, 2000, 3000, 4000]
+const REPEATABLE_POSTS = ['/transcribe', '/structure', '/redflags', '/safety', '/summary', '/alert-audio', '/reconcile']
+const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+
 async function request(path, options) {
+  const repeatable = !options?.method || options.method === 'GET' || REPEATABLE_POSTS.includes(path)
+  const retries = repeatable ? RETRY_DELAYS_MS : []
   let res
-  try {
-    res = await fetch(apiUrl('/api' + path), options)
-  } catch {
-    throw new Error('Cannot reach the server. Check that the backend is running and your network is up.')
+  for (let i = 0; ; i++) {
+    try {
+      res = await fetch(apiUrl('/api' + path), options)
+      if (![502, 503, 504].includes(res.status) || i >= retries.length) break
+    } catch {
+      if (i >= retries.length) throw new Error('Could not connect to the server. Check your internet connection and try again.')
+    }
+    await wait(retries[i])
   }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
