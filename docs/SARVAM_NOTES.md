@@ -124,3 +124,9 @@ Verified in M11 (SDK 0.1.43 introspection plus a live run on 2026-11-03; the doc
 - [x] Pick one verified speaker per language (mr-IN, hi-IN, en-IN) and put them in `.env`. (Set in `.env.example`: `ishita_mr_conversational`, `kavya_hi_conversational`, `ritu_en_medical`. API-verified, NOT yet listened to: run `python scripts/test_voice.py <lang> <speaker> "text"` and swap if they sound wrong.)
       Test each with `python scripts/test_voice.py mr-IN <speaker> "नमस्कार"`.
 
+
+## Real-time streaming STT (verified in M12, 2026-11-03)
+
+- SDK: `AsyncSarvamAI(...).speech_to_text_streaming.connect(model='saaras:v4', mode=..., language_code=..., sample_rate=16000, flush_signal=True, high_vad_sensitivity=True)` as an async context manager. Send with `await ws.transcribe(audio=<base64 WAV>, encoding='audio/wav', sample_rate=16000)`, ask for text now with `await ws.flush()`, read with `async for msg in ws` (`msg.type == 'data'` has `msg.data.transcript`; `'events'` carry VAD signals). Only WAV or raw PCM is accepted; the SDK helper sends WAV.
+- Without flushing, the whole transcript came back only after the audio ended (20 s for a 19.5 s clip) because the service segments on pauses. Calling `flush()` every 2 chunks of 1 s gave a segment about every second.
+- The docs pages did not document the raw frame format, chunk size or concurrency limits; the `data` key and `is_final` are not confirmed.

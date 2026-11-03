@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { startLive } from '../stream.js'
 
 const MAX_SECONDS = 180 // matches MAX_AUDIO_SECONDS on the backend
 const MIME_TYPES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus']
@@ -12,10 +13,12 @@ function micError(e) {
   return `Could not start recording: ${e.message}`
 }
 
-export default function Recorder({ scenarioId, onAudio, busy }) {
+export default function Recorder({ scenarioId, onAudio, busy, streaming, language, onLivePartial, onLiveDone }) {
   const [recording, setRecording] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [error, setError] = useState('')
+  const [live, setLive] = useState(false)
+  const stopLive = useRef(null)
   const recorder = useRef(null)
   const timer = useRef(null)
   const fileInput = useRef(null)
@@ -65,6 +68,21 @@ export default function Recorder({ scenarioId, onAudio, busy }) {
     }, 1000)
   }
 
+  const goLive = async () => {
+    setError('')
+    try {
+      stopLive.current = await startLive({
+        language, scenario: scenarioId,
+        onPartial: onLivePartial,
+        onDone: (t) => { setLive(false); onLiveDone(t) },
+        onError: (m) => { setLive(false); setError(m) },
+      })
+      setLive(true)
+    } catch (e) {
+      setError(micError(e))
+    }
+  }
+
   const onFile = (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -82,6 +100,12 @@ export default function Recorder({ scenarioId, onAudio, busy }) {
       >
         {busy ? 'Transcribing…' : recording ? `Stop  ${fmt(seconds)}` : 'Record'}
       </button>
+      {streaming && (
+        <button disabled={busy || recording} onClick={live ? () => { stopLive.current(); } : goLive}
+          className={`btn w-full border border-line ${live ? 'bg-red-600 text-white animate-pulse' : 'bg-white'}`}>
+          {live ? 'Stop live transcription' : 'Record live (words appear as you speak)'}
+        </button>
+      )}
       <div className="flex items-center gap-3 text-sm">
         <input ref={fileInput} type="file" accept="audio/*" onChange={onFile} className="hidden" />
         <button disabled={busy || recording} onClick={() => fileInput.current.click()} className="link">

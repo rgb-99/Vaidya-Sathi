@@ -156,7 +156,7 @@ def doc_results(job_id):
 
 
 # ---- Real-time streaming STT (WebSocket). WAV chunks in, transcript segments out.
-async def stream_relay(next_audio, emit, language_code, flush_wait_s=8):
+async def stream_relay(next_audio, emit, language_code, flush_wait_s=8, flush_every=2):
     """next_audio(): awaitable returning a WAV chunk (bytes) or None when the speaker stops.
     emit(text): awaitable called for every transcript segment Sarvam returns."""
     from sarvamai import AsyncSarvamAI
@@ -167,11 +167,15 @@ async def stream_relay(next_audio, emit, language_code, flush_wait_s=8):
     try:
         async with client.speech_to_text_streaming.connect(
                 model=config.STT_MODEL, mode=config.STT_MODE, language_code=language_code,
-                sample_rate=16000, flush_signal=True) as ws:
+                sample_rate=16000, flush_signal=True, high_vad_sensitivity=True) as ws:
             async def pump_in():
+                sent = 0
                 while (chunk := await next_audio()) is not None:
                     await ws.transcribe(audio=base64.b64encode(chunk).decode(), encoding='audio/wav', sample_rate=16000)
-                await ws.flush()   # process whatever is buffered without waiting for silence
+                    sent += 1
+                    if sent % flush_every == 0:
+                        await ws.flush()   # do not wait for a pause in speech: ask for text every few chunks
+                await ws.flush()
 
             async def pump_out():
                 async for msg in ws:

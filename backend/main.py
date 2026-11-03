@@ -245,13 +245,11 @@ async def stream(ws: WebSocket, language: str = 'unknown', scenario: str = 'S1')
     try:
         if config.MOCK_MODE:   # canned words, one segment per chunk received, no network
             words = mock_data.SCENARIOS.get(scenario, mock_data.SCENARIOS['S1'])['transcript'].split()
-            per = 4
-            for i in range(0, len(words), per):
-                if await next_audio() is None:
-                    break
-                await emit(' '.join(words[i:i + per]))
-            while await next_audio() is not None:
-                pass
+            per, i = 4, 0
+            while await next_audio() is not None:   # one segment per chunk, until the client sends 'end'
+                if i < len(words):
+                    await emit(' '.join(words[i:i + per]))
+                    i += per
         else:
             await sarvam_client.stream_relay(next_audio, emit, language)
         await ws.send_json({'type': 'done', 'transcript': ' '.join(segments)})

@@ -1,6 +1,6 @@
 """Stream a recorded clip through /api/stream in 1 s chunks and compare the final record with the normal path.
 Run from repo root with the backend up (ENABLE_STREAMING=true, MOCK_MODE=false):
-  python scripts/stream_check.py demo/audio/S1.wav [language]"""
+  python scripts/stream_check.py clip_16k.wav [language [original.wav]]   (original.wav: also compare the final record with the batch path)"""
 import asyncio
 import io
 import json
@@ -44,5 +44,31 @@ async def main(path, language):
                 print(msg)
                 break
         await sender
+        return msg.get('transcript', '')
 
-asyncio.run(main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else 'unknown'))
+def compare(clip_16k, original, language, streamed):
+    """Final record from the streamed transcript vs the record from the normal (batch) path on the same clip."""
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'backend'))
+    import config, llm, voice
+    config.MOCK_MODE = False
+    batch_text = voice.transcribe(Path(original).read_bytes(), Path(original).name)['transcript']
+    def facts(rec):
+        out = {f'vitals.{k}': v for k, v in rec.vitals.model_dump().items() if v}
+        for rx in rec.prescription:
+            out[f'rx.{rx.drug.lower()}'] = rx.dose.replace(' ', '').lower().replace('milligram', 'mg')
+        out['complaints'] = ', '.join(sorted(rec.chief_complaints))
+        return out
+    a, b = facts(llm.structure(batch_text)), facts(llm.structure(streamed))
+    same = {k for k in a if k in b and (a[k] == b[k] or k == 'complaints')}
+    print(f'compare: {len(same)}/{len(a)} batch facts reproduced by streaming (complaints are compared by presence only)')
+    for k in sorted(set(a) | set(b)):
+        if k not in same:
+            print(f'   differs {k}: batch={a.get(k)!r} stream={b.get(k)!r}')
+
+
+if __name__ == '__main__':
+    clip, lang = sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else 'unknown'
+    transcript = asyncio.run(main(clip, lang))
+    if len(sys.argv) > 3:   # python scripts/stream_check.py clip_16k.wav mr-IN original.wav
+        compare(clip, sys.argv[3], lang, transcript)

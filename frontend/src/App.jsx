@@ -31,6 +31,8 @@ export default function App() {
   const [view, setView] = useState('consult')
   const [shareInfo, setShareInfo] = useState(null)
   const [vision, setVision] = useState(false)
+  const [streaming, setStreaming] = useState(false)
+  const live = useRef({ text: '', timer: null })
   const [includeDx, setIncludeDx] = useState(false)
   const [summary, setSummary] = useState(null)
   const [alertSrc, setAlertSrc] = useState('')
@@ -41,7 +43,7 @@ export default function App() {
 
   useEffect(() => {
     api.health().then((h) => setMock(h.mock)).catch((e) => setError(e.message))
-    api.features().then((f) => setVision(f.vision)).catch(() => {})
+    api.features().then((f) => { setVision(f.vision); setStreaming(f.streaming) }).catch(() => {})
     api.getLanguages().then((l) => l.length && setLangs(l)).catch(() => {})
     api.getScenarios().then(setScenarios).catch((e) => setError(e.message))
   }, [])
@@ -53,6 +55,26 @@ export default function App() {
     if (r.notice) setError(r.notice)
     else if (!r.transcript.trim()) setError('No speech was detected. Try again, or type the transcript manually.')
     if (!langManual.current && langs.some((l) => l.code === r.language)) setLang(r.language)
+  }
+
+  // Live mode: words are appended as they arrive, and the form is re-filled every few seconds (debounced).
+  const livePartial = (text) => {
+    live.current.text = `${live.current.text} ${text}`.trim()
+    setTranscript(live.current.text)
+    setUtterances([])
+    if (!live.current.timer) {
+      live.current.timer = setTimeout(async () => {
+        live.current.timer = null
+        try { setRecord(await api.structure(live.current.text)) } catch { /* the final extraction reports errors */ }
+      }, 4000)
+    }
+  }
+  const liveDone = (full) => {
+    clearTimeout(live.current.timer)
+    live.current = { text: '', timer: null }
+    setTranscript(full)
+    setConfirmed(false); setRecordId(null)
+    run('structure', async () => setRecord(await api.structure(full)))
   }
 
   const run = async (name, fn) => {
@@ -157,7 +179,7 @@ export default function App() {
       <main className="mx-auto grid max-w-7xl gap-5 px-5 py-6 md:grid-cols-3">
         <section className="card space-y-4">
           <div className="eyebrow">01 — Record</div>
-          <Recorder scenarioId={scenarioId} onAudio={onAudio} busy={busy === 'transcribe'} />
+          <Recorder scenarioId={scenarioId} onAudio={onAudio} busy={busy === 'transcribe'} streaming={streaming} language={lang === 'unknown' ? 'unknown' : lang} onLivePartial={livePartial} onLiveDone={liveDone} />
           <div>
             <span className="label">Transcript (editable)</span>
             <textarea className="input h-56" placeholder="Transcript appears here"
