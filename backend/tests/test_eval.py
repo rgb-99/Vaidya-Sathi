@@ -106,3 +106,10 @@ def test_estimate_counts_one_tts_call_per_turn():
 def test_latest_report_is_a_real_committed_run():
     data = json.loads((ROOT / 'eval' / 'reports' / 'latest.json').read_text(encoding='utf-8'))
     assert data['scenario_count'] >= 30 and data['metrics']['hallucinations'] == 0 and data['gate']['passed']
+
+
+def test_devanagari_prompt_example_uses_no_eval_drug_or_complaint():
+    import llm
+    texts = ' '.join(t['text'] for s in scenarios() for t in s['turns'])
+    out = llm.DEVANAGARI_EXAMPLE['output']
+    assert out['prescription'][0]['drug'] not in texts and 'पाठदुखी' not in texts

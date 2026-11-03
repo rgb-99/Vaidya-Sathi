@@ -1,5 +1,5 @@
 {
-  "run_id": "20261103T141228Z",
+  "run_id": "20261103T143616Z",
   "mode": "text",
   "scenario_count": 32,
   "synthetic": "All scenarios are synthetic scripts; no audio or STT in this run (text mode).",
@@ -7,18 +7,18 @@
     "llm_model": "sarvam-105b",
     "stt_model": "saaras:v4",
     "stt_mode": "codemix",
-    "prompt_version": "v2",
+    "prompt_version": "v3",
     "diarization": false,
     "keyterms": false
   },
   "metrics": {
-    "overall_f1": 95.6,
+    "overall_f1": 98.8,
     "per_field": {
       "complaints": {
-        "precision": 97.3,
-        "recall": 97.3,
+        "precision": 100.0,
+        "recall": 100.0,
         "expected": 37,
-        "f1": 97.3
+        "f1": 100.0
       },
       "vitals": {
         "precision": 100.0,
@@ -27,40 +27,40 @@
         "f1": 100.0
       },
       "drug": {
-        "precision": 96.9,
+        "precision": 100.0,
         "recall": 100.0,
         "expected": 31,
-        "f1": 98.4
+        "f1": 100.0
       },
       "dose": {
-        "precision": 96.9,
+        "precision": 100.0,
         "recall": 100.0,
         "expected": 31,
-        "f1": 98.4
+        "f1": 100.0
       },
       "timing": {
-        "precision": 87.5,
+        "precision": 90.3,
         "recall": 90.3,
         "expected": 31,
-        "f1": 88.9
+        "f1": 90.3
       },
       "duration": {
-        "precision": 90.6,
-        "recall": 93.5,
+        "precision": 100.0,
+        "recall": 100.0,
         "expected": 31,
-        "f1": 92.1
+        "f1": 100.0
       },
       "advice": {
-        "precision": 93.1,
-        "recall": 93.1,
+        "precision": 100.0,
+        "recall": 100.0,
         "expected": 29,
-        "f1": 93.1
+        "f1": 100.0
       },
       "follow_up": {
-        "precision": 95.0,
-        "recall": 95.0,
+        "precision": 100.0,
+        "recall": 100.0,
         "expected": 20,
-        "f1": 95.0
+        "f1": 100.0
       }
     },
     "drug_exact": 100.0,
@@ -79,128 +79,37 @@
         "n": 32
       },
       "structure": {
-        "p50": 4.21,
-        "p95": 7.59,
+        "p50": 4.38,
+        "p95": 6.85,
         "n": 32
       }
     }
   },
   "scenarios": [
     {
-      "id": "E03",
+      "id": "E02",
       "missed": [
         [
-          "complaints",
-          "",
-          "giddiness"
-        ],
-        [
           "timing",
-          "amlodipine",
-          "morning"
-        ],
-        [
-          "duration",
-          "amlodipine",
-          "30 days"
-        ],
-        [
-          "timing",
-          "telmisartan",
+          "cetirizine",
           "night, after food"
         ],
         [
-          "duration",
-          "telmisartan",
-          "30 days"
-        ],
-        [
-          "advice",
-          "",
-          "low salt"
-        ],
-        [
-          "advice",
-          "",
-          "walk daily"
-        ],
-        [
-          "follow_up",
-          "",
-          "1 month"
+          "timing",
+          "paracetamol",
+          "morning and evening, after food"
         ]
       ],
       "extra": [
         [
-          "complaints",
-          "",
-          "चक्कर येतात"
+          "timing",
+          "cetirizine",
+          "after dinner"
         ],
         [
           "timing",
-          "amlodipine",
-          "सकाळी"
-        ],
-        [
-          "duration",
-          "amlodipine",
-          "30 दिवस"
-        ],
-        [
-          "timing",
-          "telmisartan",
-          "रात्री जेवणानंतर"
-        ],
-        [
-          "duration",
-          "telmisartan",
-          "30 दिवस"
-        ],
-        [
-          "advice",
-          "",
-          "मीठ कमी खा"
-        ],
-        [
-          "advice",
-          "",
-          "रोज चाला"
-        ],
-        [
-          "follow_up",
-          "",
-          "एका महिन्यानंतर परत या"
-        ]
-      ],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 16
-    },
-    {
-      "id": "E06",
-      "missed": [],
-      "extra": [
-        [
-          "drug",
-          "",
-          "Metformin"
-        ],
-        [
-          "dose",
-          "metformin",
-          "500mg"
-        ],
-        [
-          "timing",
-          "metformin",
-          "evening"
-        ],
-        [
-          "duration",
-          "metformin",
-          "30 days"
+          "paracetamol",
+          "after breakfast, after dinner"
         ]
       ],
       "hallucinations": [],
@@ -210,19 +119,19 @@
       "issues": 4
     },
     {
-      "id": "N02",
+      "id": "F02",
       "missed": [
         [
           "timing",
-          "metformin",
+          "paracetamol",
           "morning and evening, after food"
         ]
       ],
       "extra": [
         [
           "timing",
-          "metformin",
-          "morning, after dinner"
+          "paracetamol",
+          "after meals"
         ]
       ],
       "hallucinations": [],
@@ -242,7 +151,7 @@
       "issues": 0
     },
     {
-      "id": "E02",
+      "id": "E03",
       "missed": [],
       "extra": [],
       "hallucinations": [],
@@ -263,6 +172,16 @@
     },
     {
       "id": "E05",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
+      "id": "E06",
       "missed": [],
       "extra": [],
       "hallucinations": [],
@@ -504,6 +423,16 @@
       "issues": 0
     },
     {
+      "id": "N02",
+      "missed": [],
+      "extra": [],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 0
+    },
+    {
       "id": "N03",
       "missed": [],
       "extra": [],
@@ -531,16 +460,6 @@
     },
     {
       "id": "F01",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "F02",
       "missed": [],
       "extra": [],
       "hallucinations": [],
@@ -579,52 +498,52 @@
     "failures": []
   },
   "previous": {
-    "run_id": "20261103T141132Z",
+    "run_id": "20261103T141228Z",
     "mode": "text",
     "metrics": {
-      "overall_f1": 90.1,
+      "overall_f1": 95.6,
       "per_field": {
         "complaints": {
-          "precision": 94.6,
-          "recall": 94.6,
+          "precision": 97.3,
+          "recall": 97.3,
           "expected": 37,
-          "f1": 94.6
+          "f1": 97.3
         },
         "vitals": {
           "precision": 100.0,
-          "recall": 97.4,
+          "recall": 100.0,
           "expected": 38,
-          "f1": 98.7
+          "f1": 100.0
         },
         "drug": {
-          "precision": 100.0,
+          "precision": 96.9,
           "recall": 100.0,
           "expected": 31,
-          "f1": 100.0
+          "f1": 98.4
         },
         "dose": {
-          "precision": 100.0,
+          "precision": 96.9,
           "recall": 100.0,
           "expected": 31,
-          "f1": 100.0
+          "f1": 98.4
         },
         "timing": {
-          "precision": 83.9,
-          "recall": 83.9,
+          "precision": 87.5,
+          "recall": 90.3,
           "expected": 31,
-          "f1": 83.9
+          "f1": 88.9
         },
         "duration": {
-          "precision": 93.5,
+          "precision": 90.6,
           "recall": 93.5,
           "expected": 31,
-          "f1": 93.5
+          "f1": 92.1
         },
         "advice": {
-          "precision": 51.7,
-          "recall": 51.7,
+          "precision": 93.1,
+          "recall": 93.1,
           "expected": 29,
-          "f1": 51.7
+          "f1": 93.1
         },
         "follow_up": {
           "precision": 95.0,
@@ -649,8 +568,8 @@
           "n": 32
         },
         "structure": {
-          "p50": 4.16,
-          "p95": 7.42,
+          "p50": 4.21,
+          "p95": 7.59,
           "n": 32
         }
       }

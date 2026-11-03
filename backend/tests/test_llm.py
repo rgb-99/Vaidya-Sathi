@@ -69,9 +69,11 @@ def test_two_failures_return_empty_record_with_warning(monkeypatch):
     assert r.prescription == [] and r.warnings
 
 
-def test_prompt_has_two_examples_and_holds_out_s3():
+def test_prompt_examples_hold_out_s3_and_require_english_output():
     p = llm.system_prompt()
-    assert p.count('Example transcript:') == 2 and 'Metformin' not in p
+    assert p.count('Example transcript:') == 3 and 'Metformin' not in p and 'must be in English' in p
+    d = llm.DEVANAGARI_EXAMPLE
+    assert all(q in d['transcript'] for q in d['evidence'].values())
 
 
 @pytest.mark.parametrize('given,expected', [

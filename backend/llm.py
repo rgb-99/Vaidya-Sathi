@@ -15,7 +15,7 @@ from rapidfuzz import fuzz
 from schemas import ClinicalRecord, Provenance, Utterance
 
 log = logging.getLogger('vaidya')
-PROMPT_VERSION = 'v2'
+PROMPT_VERSION = 'v3'
 SHAPE_KEYS = ['patient', 'chief_complaints', 'vitals', 'diagnosis', 'prescription', 'advice', 'follow_up', 'language_detected']
 
 # SPEC TRD 8.1, plus one line on spoken numbers (STT writes them as words; see DECISIONS.md).
@@ -30,7 +30,8 @@ EXTRACTION_PROMPT = (
     'resp_rate,sugar}, diagnosis, prescription[{drug,dose,frequency,timing,duration}], advice[], follow_up, '
     'language_detected, evidence[{field,quote}]. Evidence has one entry for every non-empty value you output: field '
     'is its path (for example vitals.bp, chief_complaints.0, prescription.1.dose, advice.0, follow_up) and quote is '
-    'copied exactly, character for character, from the transcript.'
+    'copied exactly, character for character, from the transcript. Every string value in the JSON, except evidence '
+    'quotes and drug names, must be in English even when the transcript is in Marathi or Hindi.'
 )
 
 # Hand-written evidence for the two few-shot examples (checked to be verbatim substrings by a test).
@@ -46,6 +47,18 @@ EXAMPLE_EVIDENCE = {
 }
 
 
+# Third example: a Marathi (Devanagari) transcript with English output, to stop complaints and advice staying untranslated.
+# It shares no text with the eval scenarios (checked by a test).
+DEVANAGARI_EXAMPLE = {
+    'transcript': 'डॉक्टर, मला पाठदुखी आहे. ताप 99 आहे. हे Diclofenac 50mg दुपारी एक गोळी घ्या, 3 दिवस. गरम पाणी शेका. एका आठवड्यानंतर परत या.',
+    'output': {'patient': {'name': '', 'age': '', 'sex': ''}, 'chief_complaints': ['back pain'], 'vitals': {'temp': '99'}, 'diagnosis': '',
+               'prescription': [{'drug': 'Diclofenac', 'dose': '50mg', 'frequency': 'once daily', 'timing': 'afternoon', 'duration': '3 days'}],
+               'advice': ['apply hot compress'], 'follow_up': '1 week', 'language_detected': 'mr-IN'},
+    'evidence': {'chief_complaints.0': 'पाठदुखी', 'vitals.temp': 'ताप 99', 'prescription.0.drug': 'Diclofenac', 'prescription.0.dose': '50mg',
+                 'prescription.0.timing': 'दुपारी', 'prescription.0.duration': '3 दिवस', 'advice.0': 'गरम पाणी शेका', 'follow_up': 'एका आठवड्यानंतर परत या'},
+}
+
+
 def _examples():
     out = []
     for sid in ('S1', 'S2'):  # S3 is held out of the prompt so the eval stays honest
@@ -54,6 +67,9 @@ def _examples():
         shown = {k: rec[k] for k in SHAPE_KEYS}
         shown['evidence'] = [{'field': f, 'quote': q} for f, q in EXAMPLE_EVIDENCE[sid].items()]
         out.append(f"Example transcript:\n{s['transcript']}\nExample output:\n" + json.dumps(shown, ensure_ascii=False))
+    d = DEVANAGARI_EXAMPLE
+    shown = {**d['output'], 'evidence': [{'field': f, 'quote': q} for f, q in d['evidence'].items()]}
+    out.append(f"Example transcript:\n{d['transcript']}\nExample output:\n" + json.dumps(shown, ensure_ascii=False))
     return '\n\n'.join(out)
 
 
