@@ -27,8 +27,9 @@ import redflags
 import safety
 import share
 import signoff
+import vision
 import voice
-from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, ShareRequest, StructureRequest,
+from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, ReconcileRequest, ShareRequest, StructureRequest,
                      SignoffRequest, SummaryRequest, SummaryResponse)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -184,6 +185,39 @@ def records():
 @app.get('/api/tickets')
 def tickets():
     return db.list_tickets()
+
+
+def require_vision():
+    if not config.ENABLE_VISION:
+        raise HTTPException(503, 'Prescription photo reading is turned off (set ENABLE_VISION=true).')
+
+
+@app.get('/api/features')
+def features():
+    return {'vision': config.ENABLE_VISION, 'diarization': config.ENABLE_DIARIZATION}
+
+
+@app.post('/api/prescription-photo')
+async def prescription_photo(image: UploadFile = File(...)):
+    require_vision()
+    try:
+        return {'job_id': vision.start(image.filename, await image.read())}
+    except vision.VisionError as e:
+        raise HTTPException(e.status_code, str(e))
+
+
+@app.get('/api/prescription-photo/{job_id}')
+def prescription_photo_result(job_id: str):
+    require_vision()
+    job = vision.status(job_id)
+    if job is None:
+        raise HTTPException(404, 'Unknown job.')
+    return {'job_id': job_id, **job}
+
+
+@app.post('/api/reconcile')
+def reconcile(req: ReconcileRequest):
+    return {'lines': vision.reconcile(req.previous, req.record)}
 
 
 @app.post('/api/safety')

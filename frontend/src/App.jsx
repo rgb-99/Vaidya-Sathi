@@ -7,6 +7,7 @@ import RedFlagBanner from './components/RedFlagBanner.jsx'
 import DiarizedTranscript from './components/DiarizedTranscript.jsx'
 import EvalPage from './components/EvalPage.jsx'
 import History from './components/History.jsx'
+import PrescriptionPhoto from './components/PrescriptionPhoto.jsx'
 import SafetyWarnings from './components/SafetyWarnings.jsx'
 import SaidInferred from './components/SaidInferred.jsx'
 import SignOff from './components/SignOff.jsx'
@@ -29,6 +30,7 @@ export default function App() {
   const [recordId, setRecordId] = useState(null)
   const [view, setView] = useState('consult')
   const [shareInfo, setShareInfo] = useState(null)
+  const [vision, setVision] = useState(false)
   const [includeDx, setIncludeDx] = useState(false)
   const [summary, setSummary] = useState(null)
   const [alertSrc, setAlertSrc] = useState('')
@@ -39,6 +41,7 @@ export default function App() {
 
   useEffect(() => {
     api.health().then((h) => setMock(h.mock)).catch((e) => setError(e.message))
+    api.features().then((f) => setVision(f.vision)).catch(() => {})
     api.getLanguages().then((l) => l.length && setLangs(l)).catch(() => {})
     api.getScenarios().then(setScenarios).catch((e) => setError(e.message))
   }, [])
@@ -174,6 +177,7 @@ export default function App() {
               <SafetyWarnings warnings={record.safety_warnings} />
               {alertSrc && <audio controls autoPlay src={alertSrc} className="w-full" />}
               <RecordForm record={record} onChange={onRecordChange} locked={confirmed} />
+              {vision && <PrescriptionPhoto record={record} />}
               <SaidInferred record={record} />
               <SignOff record={record} onSign={signOff} busy={busy === 'signoff'} />
             </>

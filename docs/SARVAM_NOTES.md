@@ -89,9 +89,13 @@ wav_bytes = base64.b64decode("".join(r.audios))
 
 ## Document Intelligence (Vision)
 
-- Asynchronous job flow — read the Document Intelligence docs for `parse` or `extract`.
-- Used for prescription photo reading (F15).
-- Use fake prescriptions only.
+Verified in M11 (SDK 0.1.43 introspection plus a live run on 2026-11-03; the docs overview names the operations but gives no signatures):
+
+- Namespace `client.doc_ai`: `parse()`, `extract()`, `split()`, `classify()`, `get_status(job_id)`, `get_results(job_id)`, `get_download_url(job_id)`, `create_upload_url()`, `get_capabilities()`. Supersedes the older Document Digitization API.
+- **Extract** (specific values): `client.doc_ai.extract(file=[(filename, bytes_or_file, mime)], schema=<JSON-schema string>, output_format='json')` returns `job_id`, `status='pending'`, `run_id`. Poll `get_status(job_id).status` (seen: `pending`, `completed`; failure state names are not documented, so `failed`, `error`, `cancelled` are treated as failures). Then `get_results(job_id)` returns `.result` (our schema, e.g. `{"medicines": [{drug, dose, frequency, duration}]}`) and `.annotations` (per field `confidence` 0 to 1 and the source region on the page) and `.usage` (page counts).
+- **Parse** (whole page as text): `parse(file=[...], language=..., content_type='printed'|'handwritten'|'mixed')`, fetch with `get_download_url`; output HTML, Markdown or JSON. Not used by the app.
+- Accepted types: PNG, JPG and PDF worked or are listed; no size or page limit was found on the pages read. The app enforces its own 10 MB limit.
+- Live result: all three synthetic samples (printed text in a handwriting-style font) were read completely at confidence 1.0 in a few seconds. Real handwriting is untested.
 
 ---
 

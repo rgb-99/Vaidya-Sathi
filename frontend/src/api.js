@@ -41,3 +41,5 @@ export const getCardHtml = async (record) => {
 
 export const safety = (record) => post('/safety', record)
 export const share = (record, language, include_diagnosis) => post('/share', { record, language, include_diagnosis })
+export const reconcile = (record, previous) => post('/reconcile', { record, previous })
+export const features = () => request('/features')

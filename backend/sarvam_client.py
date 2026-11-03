@@ -135,3 +135,20 @@ def stt_diarized(path, language_code='unknown', num_speakers=None, keyterms=None
         raise SarvamError('Speaker separation timed out.', 502)
     entries = (data.get('diarized_transcript') or {}).get('entries') or []
     return {'transcript': data.get('transcript') or '', 'language': data.get('language_code') or '', 'entries': entries}
+
+
+# ---- Document AI (prescription photos). The job is async: start, poll status, fetch results.
+def doc_extract_start(filename, data, mime, schema):
+    if config.MOCK_MODE:
+        return 'mock-job'
+    return _call(lambda: _get_client().doc_ai.extract(file=[(filename, data, mime)], schema=schema, output_format='json')).job_id
+
+
+def doc_status(job_id):
+    """Lower-case job status: 'pending', 'completed', 'failed', ..."""
+    return str(_call(lambda: _get_client().doc_ai.get_status(job_id)).status).lower()
+
+
+def doc_results(job_id):
+    r = _call(lambda: _get_client().doc_ai.get_results(job_id))
+    return {'result': r.result or {}, 'annotations': r.annotations or {}}
