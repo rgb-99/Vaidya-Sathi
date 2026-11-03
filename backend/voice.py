@@ -8,8 +8,10 @@ from collections import Counter
 from pathlib import Path
 
 import config
+import formulary
 import mock_data
 import sarvam_client
+from schemas import Utterance
 
 # Formats the Sarvam REST endpoint accepts (docs.sarvam.ai, STT overview). PCM is excluded: it needs a codec hint.
 ACCEPTED_EXT = {'.wav', '.mp3', '.aac', '.aiff', '.aif', '.ogg', '.opus', '.flac',
@@ -85,9 +87,42 @@ def _cut(wav, start, end, dst):
         raise AudioError('Could not split the audio.', 500)
 
 
+ROLE_LABELS = {'doctor': 'clinician', 'nurse': 'clinician', 'patient': 'patient'}
+INSTRUCTION_RE = re.compile(r'\d\s*(?:mg|mcg|ml)\b|\b(?:tablet|take|daily|days?|divas|ghet|kara)\b|गोळी|गोली|घ्या|लें|लेना|लीजिए', re.I)
+
+
+def _stt(path):
+    """One REST call; passes the formulary as key terms when ENABLE_KEYTERMS=true (saaras:v4)."""
+    kw = {'keyterms': formulary.key_terms()} if config.ENABLE_KEYTERMS else {}
+    return sarvam_client.stt(path, **kw)
+
+
+def role_score(text):
+    """How much a turn sounds like a clinician: drug names count triple, plus doses and instructions."""
+    drugs = sum(bool(re.search(rf'\b{re.escape(d.lower())}\b', text.lower())) for d in formulary.DRUGS)
+    return 3 * drugs + len(INSTRUCTION_RE.findall(text))
+
+
+def assign_roles(entries):
+    """Diarized entries -> Utterances. The speaker who states drugs, doses or instructions is the clinician.
+    One speaker, or no clear winner: every turn stays 'unknown' (the caller then uses the role-free prompt)."""
+    ids = list(dict.fromkeys(str(e['speaker_id']) for e in entries))
+    score = {i: sum(role_score(e['transcript']) for e in entries if str(e['speaker_id']) == i) for i in ids}
+    top = sorted(score.values(), reverse=True)
+    clinician = max(score, key=score.get) if len(ids) >= 2 and top[0] > top[1] else None
+    return [Utterance(id=f'u{n}', text=e['transcript'].strip(),
+                      speaker='unknown' if clinician is None else ('clinician' if str(e['speaker_id']) == clinician else 'patient'),
+                      start_s=e.get('start_time_seconds'), end_s=e.get('end_time_seconds'))
+            for n, e in enumerate(entries, 1)]
+
+
 def _mock(filename):
     s = mock_data.SCENARIOS[mock_data.scenario_for_filename(filename)]
-    return {'transcript': s['transcript'], 'language': s['language']}
+    out = {'transcript': s['transcript'], 'language': s['language'], 'utterances': []}
+    if config.ENABLE_DIARIZATION:  # canned turns from the labelled mock transcript
+        turns = re.findall(r'(Doctor|Nurse|Patient):\s*(.*?)(?=\s(?:Doctor|Nurse|Patient):|$)', s['transcript'])
+        out['utterances'] = [Utterance(id=f'u{n}', speaker=ROLE_LABELS[w.lower()], text=t.strip()) for n, (w, t) in enumerate(turns, 1)]
+    return out
 
 
 def transcribe(audio_bytes, filename):
@@ -106,8 +141,15 @@ def transcribe(audio_bytes, filename):
         duration = probe_duration(src)
         if duration is not None and duration > config.MAX_AUDIO_SECONDS:
             raise AudioTooLongError(f'Audio is longer than {config.MAX_AUDIO_SECONDS} seconds.')
+        notice = ''
+        if config.ENABLE_DIARIZATION and ext in ACCEPTED_EXT:  # Batch API job; no 30 s limit
+            try:
+                d = sarvam_client.stt_diarized(src, keyterms=formulary.key_terms() if config.ENABLE_KEYTERMS else None)
+                return {'transcript': d['transcript'], 'language': d['language'], 'utterances': assign_roles(d['entries'])}
+            except sarvam_client.SarvamError:
+                notice = 'Speaker separation is unavailable right now; transcribed without speaker labels.'
         if ext in ACCEPTED_EXT and duration is not None and duration <= REST_MAX_S:
-            return sarvam_client.stt(src)
+            return {**_stt(src), 'utterances': [], 'notice': notice}
 
         # Unknown duration (browser WebM), unaccepted format, or longer than one request allows.
         wav = tmp / 'audio.wav'
@@ -116,17 +158,18 @@ def transcribe(audio_bytes, filename):
         if duration > config.MAX_AUDIO_SECONDS:
             raise AudioTooLongError(f'Audio is longer than {config.MAX_AUDIO_SECONDS} seconds.')
         if duration <= REST_MAX_S:
-            return sarvam_client.stt(wav)
+            return {**_stt(wav), 'utterances': [], 'notice': notice}
 
         results = []
         for i, (a, b) in enumerate(plan_chunks(duration, find_silences(wav))):
             part = tmp / f'part{i}.wav'
             _cut(wav, a, b, part)
-            results.append(sarvam_client.stt(part))
+            results.append(_stt(part))
         langs = [r['language'] for r in results if r['language']]
         return {
             'transcript': ' '.join(r['transcript'].strip() for r in results if r['transcript'].strip()),
             'language': Counter(langs).most_common(1)[0][0] if langs else '',
+            'utterances': [], 'notice': notice,
         }
 
 

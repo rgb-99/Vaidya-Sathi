@@ -107,7 +107,8 @@ def test_short_wav_goes_straight_to_sarvam(tmp_path, monkeypatch):
     monkeypatch.setattr(sarvam_client, 'stt', lambda p: calls.append(Path(p)) or
                         {'transcript': 'hello', 'language': 'hi-IN'})
     wav = make_wav(tmp_path / 'a.wav', [(3, True)])
-    assert voice.transcribe(wav.read_bytes(), 'a.wav') == {'transcript': 'hello', 'language': 'hi-IN'}
+    out = voice.transcribe(wav.read_bytes(), 'a.wav')
+    assert (out['transcript'], out['language'], out['utterances']) == ('hello', 'hi-IN', [])
     assert len(calls) == 1
     assert not calls[0].exists(), 'temp audio must be deleted afterwards'
 

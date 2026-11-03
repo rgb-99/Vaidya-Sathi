@@ -10,6 +10,8 @@ import config
 import formulary
 import mock_data
 import sarvam_client
+from rapidfuzz import fuzz
+
 from schemas import ClinicalRecord, Provenance, Utterance
 
 log = logging.getLogger('vaidya')
@@ -55,8 +57,15 @@ def _examples():
     return '\n\n'.join(out)
 
 
-def system_prompt():
-    return EXTRACTION_PROMPT + '\n\n' + _examples()
+ROLE_RULES = (
+    '\n\nThe transcript labels each turn with its speaker (Clinician or Patient). Medicines, doses, advice, diagnosis and '
+    'follow-up are accepted ONLY from Clinician turns. Symptoms and history come from Patient turns. A medicine that only '
+    'the Patient mentions (for example asking about it) must never appear in prescription.'
+)
+
+
+def system_prompt(roles=False):
+    return EXTRACTION_PROMPT + (ROLE_RULES if roles else '') + '\n\n' + _examples()
 
 
 def parse_json(text):
@@ -69,14 +78,14 @@ def parse_json(text):
     return json.loads(text[a:b + 1])
 
 
-def _structure(transcript):
+def _structure(transcript, roles=False):
     """Returns (record, evidence). Retries once with the error appended, then an empty record + warning."""
     if config.MOCK_MODE:
         return mock_data.scenario_record(mock_data.scenario_for_transcript(transcript)), []
     user, err = transcript, ''
     for attempt in range(2):
         try:
-            raw = sarvam_client.chat(config.LLM_MODEL, system_prompt(), user, temperature=0, max_tokens=4096,
+            raw = sarvam_client.chat(config.LLM_MODEL, system_prompt(roles), user, temperature=0, max_tokens=4096,
                                      reasoning_effort=None)  # extraction needs no thinking; it also ran away on tokens
             data = parse_json(raw)
             data.pop('red_flags', None)  # red flags come only from the deterministic rules
@@ -123,39 +132,64 @@ def literal_quote(value, transcript):
     return ''
 
 
-def attach_evidence(rec, evidence, transcript):
-    """Fill said / inferred / provenance. A value is `said` only if its quote is a verbatim substring of the
-    transcript (checked here by the machine, not trusted from the LLM); everything else is labelled unverified."""
+def attach_evidence(rec, evidence, utterances):
+    """Fill said / inferred / provenance. A value is `said` only if its quote is a verbatim substring of an utterance
+    (checked here by the machine, not trusted from the LLM); everything else is labelled unverified."""
     claimed = {e['field']: e['quote'] for e in evidence if isinstance(e, dict) and isinstance(e.get('field'), str)
                and isinstance(e.get('quote'), str)}
-    norm_transcript = _norm(transcript)
+    texts = [(u.id, _norm(u.text)) for u in utterances]
+    full = ' '.join(t for _, t in texts)
+    transcript = '\n'.join(u.text for u in utterances)
     rec.said, rec.inferred, rec.provenance = [], [], {}
     for path, value in leaf_fields(rec):
         if not value or not str(value).strip():
             continue
         quote = claimed.get(path, '')
-        if not quote or _norm(quote) not in norm_transcript:
+        if not quote or _norm(quote) not in full:
             quote = literal_quote(str(value), transcript)
-        if quote and _norm(quote) in norm_transcript:
+        ids = [i for i, t in texts if quote and _norm(quote) in t]
+        if quote and (ids or _norm(quote) in full):
             rec.said.append(f'{path}: {value}')
-            rec.provenance[path] = Provenance(source_utterance_ids=['u1'], model=config.LLM_MODEL, prompt_version=PROMPT_VERSION,
-                                              quote=quote, start=norm_transcript.find(_norm(quote)))
+            rec.provenance[path] = Provenance(source_utterance_ids=ids or [texts[0][0]], model=config.LLM_MODEL,
+                                              prompt_version=PROMPT_VERSION, quote=quote, start=full.find(_norm(quote)))
         else:
             rec.inferred.append(f'Unverified, no matching quote - {path}: {value}')
     return rec
 
 
-def structure(transcript):
-    """Transcript -> ClinicalRecord with the transcript, evidence-checked said/inferred and an audit trail."""
-    rec, evidence = _structure(transcript)
-    rec.utterances = [Utterance(id='u1', text=transcript)]  # also lets /redflags see symptom keywords after edits
-    if not rec.warnings:
-        attach_evidence(rec, evidence, transcript)
+def enforce_clinician_orders(rec, utterances):
+    """Deterministic guard (F18): a prescribed drug must appear in a Clinician turn, whatever the LLM did."""
+    clinician = ' '.join(u.text for u in utterances if u.speaker == 'clinician').lower()
+    kept = []
+    for rx in rec.prescription:
+        if rx.drug and fuzz.partial_ratio(rx.drug.lower(), clinician) >= 85:
+            kept.append(rx)
+        else:
+            rec.warnings.append(f'Removed {rx.drug or "a medicine"}: it was not said by the clinician.')
+    rec.prescription = kept
+
+
+def structure(transcript, utterances=None):
+    """Transcript (+ optional diarized turns) -> ClinicalRecord with said/inferred and an audit trail.
+    With clinician/patient roles the role-aware prompt is used; without them, the role-free prompt."""
+    turns = [u for u in (utterances or []) if u.text.strip()]
+    roles = any(u.speaker != 'unknown' for u in turns)
+    if roles:
+        label = {'clinician': 'Clinician', 'patient': 'Patient', 'unknown': 'Unknown'}
+        transcript = '\n'.join(f'{label[u.speaker]}: {u.text}' for u in turns)
+    else:
+        turns = [Utterance(id='u1', text=transcript)]
+    rec, evidence = _structure(transcript, roles)
+    rec.utterances = turns  # also lets /redflags see symptom keywords after edits
+    if roles and not rec.warnings:
+        enforce_clinician_orders(rec, turns)
+    if not any(w.startswith('Automatic extraction failed') for w in rec.warnings):
+        attach_evidence(rec, evidence, turns)
     return rec
 
 
 # ---------------------------------------------------------------- summary (M3)
-LANG_NAMES = {'mr-IN': 'Marathi', 'hi-IN': 'Hindi', 'en-IN': 'English'}
+LANG_NAMES = config.LANGUAGES
 MAX_WORDS = 120
 
 # SPEC TRD 8.2, plus two lines to keep the machine post-check reliable.
@@ -249,7 +283,8 @@ def template_summary(record, lang):
 def summarize(record, language):
     """Returns (text, used_fallback). Regenerates once if the post-check fails, then uses the template."""
     if config.MOCK_MODE:
-        return mock_data.SUMMARIES[mock_data.scenario_for_record(record)][language], False
+        return mock_data.SUMMARIES[mock_data.scenario_for_record(record)].get(language) or \
+            mock_data.SUMMARIES[mock_data.scenario_for_record(record)]['en-IN'], False
     payload = json.dumps({k: record.model_dump()[k] for k in ('diagnosis', 'prescription', 'advice', 'follow_up')},
                          ensure_ascii=False)
     system = SUMMARY_PROMPT.format(language=LANG_NAMES[language])
@@ -260,7 +295,7 @@ def summarize(record, language):
         except sarvam_client.SarvamError:
             raise
         text = re.sub(r'\s*\n\s*', ' ', text)
-        if language != 'en-IN':  # the closing safety sentence is fixed, so never leave it in English
+        if language in PHRASES and language != 'en-IN':  # the closing safety sentence is fixed, so never leave it in English
             text = re.sub(r'(?is)\s*if you feel worse.*$', '', text).strip()
             if not re.search(r'(?:ख़राब|खराब|तुरंत|लगेच)', text[-60:]):
                 text = f"{text} {PHRASES[language]['worse']}"
@@ -268,4 +303,12 @@ def summarize(record, language):
         if not problems:
             return text, False
         log.info('summary attempt %d rejected: %s', attempt + 1, problems)
-    return template_summary(record, language), True
+    return template_summary(record, language if language in PHRASES else 'en-IN'), True
+
+
+def spoken_language(language, fallback):
+    """Language the summary text is actually in: the fixed-phrase template only exists for mr, hi and en, and the
+    mock summaries too, so other languages fall back to English (and the English voice)."""
+    if language not in PHRASES and (fallback or config.MOCK_MODE):
+        return 'en-IN'
+    return language

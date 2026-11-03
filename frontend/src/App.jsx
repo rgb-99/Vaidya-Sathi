@@ -4,12 +4,13 @@ import DemoPicker from './components/DemoPicker.jsx'
 import Recorder from './components/Recorder.jsx'
 import RecordForm from './components/RecordForm.jsx'
 import RedFlagBanner from './components/RedFlagBanner.jsx'
+import DiarizedTranscript from './components/DiarizedTranscript.jsx'
 import History from './components/History.jsx'
 import SaidInferred from './components/SaidInferred.jsx'
 import SignOff from './components/SignOff.jsx'
 import SummaryPlayer from './components/SummaryPlayer.jsx'
 
-const LANGS = [['mr-IN', 'Marathi'], ['hi-IN', 'Hindi'], ['en-IN', 'English']]
+const FALLBACK_LANGS = [{ code: 'mr-IN', name: 'Marathi' }, { code: 'hi-IN', name: 'Hindi' }, { code: 'en-IN', name: 'English' }]
 const wavSrc = (b64) => `data:audio/wav;base64,${b64}`
 
 export default function App() {
@@ -17,6 +18,9 @@ export default function App() {
   const [scenarios, setScenarios] = useState([])
   const [scenarioId, setScenarioId] = useState('')
   const [lang, setLang] = useState('mr-IN')
+  const [langs, setLangs] = useState(FALLBACK_LANGS)
+  const langManual = useRef(false)
+  const [utterances, setUtterances] = useState([])
   const [transcript, setTranscript] = useState('')
   const [record, setRecord] = useState(null)
   const [confirmed, setConfirmed] = useState(false)
@@ -31,8 +35,18 @@ export default function App() {
 
   useEffect(() => {
     api.health().then((h) => setMock(h.mock)).catch((e) => setError(e.message))
+    api.getLanguages().then((l) => l.length && setLangs(l)).catch(() => {})
     api.getScenarios().then(setScenarios).catch((e) => setError(e.message))
   }, [])
+
+  // Apply a /transcribe result: text, speaker turns, and the detected language unless the user chose one.
+  const applyTranscript = (r) => {
+    setTranscript(r.transcript)
+    setUtterances(r.utterances || [])
+    if (r.notice) setError(r.notice)
+    else if (!r.transcript.trim()) setError('No speech was detected. Try again, or type the transcript manually.')
+    if (!langManual.current && langs.some((l) => l.code === r.language)) setLang(r.language)
+  }
 
   const run = async (name, fn) => {
     setBusy(name)
@@ -43,7 +57,7 @@ export default function App() {
   // Picking a demo scenario sends its prerecorded clip through the real pipeline (STT is canned in mock mode).
   const pickScenario = async (id) => {
     setScenarioId(id)
-    setTranscript('')
+    setTranscript(''); setUtterances([])
     setRecord(null); setConfirmed(false); setRecordId(null); setSummary(null); setAlertSrc(''); setTicket(null)
     const s = scenarios.find((x) => x.id === id)
     if (!s) return
@@ -51,21 +65,18 @@ export default function App() {
     await run('transcribe', async () => {
       const clip = await fetch(s.audio_url)
       if (!clip.ok) throw new Error('Could not load the demo clip.')
-      const r = await api.transcribe(await clip.blob(), `${id}.wav`)
-      setTranscript(r.transcript)
+      applyTranscript(await api.transcribe(await clip.blob(), `${id}.wav`))
     })
   }
 
   const onAudio = (blob, filename) =>
     run('transcribe', async () => {
-      const r = await api.transcribe(blob, filename)
-      setTranscript(r.transcript)
-      if (!r.transcript.trim()) setError('No speech was detected. Try again, or type the transcript manually.')
+      applyTranscript(await api.transcribe(blob, filename))
     })
 
   const extract = () =>
     run('structure', async () => {
-      const r = await api.structure(transcript)
+      const r = await api.structure(transcript, utterances)
       setRecord(r)
       if (r.warnings?.length) setError(r.warnings[0])
       setConfirmed(false); setRecordId(null); setSummary(null); setTicket(null)
@@ -115,8 +126,8 @@ export default function App() {
             ))}
           </nav>
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <select aria-label="Language" className="rounded-full border border-line bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30" value={lang} onChange={(e) => setLang(e.target.value)}>
-              {LANGS.map(([c, n]) => <option key={c} value={c}>{n}</option>)}
+            <select aria-label="Language" className="rounded-full border border-line bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30" value={lang} onChange={(e) => { langManual.current = true; setLang(e.target.value) }}>
+              {langs.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
             </select>
             <DemoPicker scenarios={scenarios} value={scenarioId} onChange={pickScenario} />
           </div>
@@ -141,8 +152,9 @@ export default function App() {
           <div>
             <span className="label">Transcript (editable)</span>
             <textarea className="input h-56" placeholder="Transcript appears here"
-              value={transcript} onChange={(e) => setTranscript(e.target.value)} />
+              value={transcript} onChange={(e) => { setTranscript(e.target.value); setUtterances([]) }} />
           </div>
+          <DiarizedTranscript utterances={utterances} onSwap={() => setUtterances((us) => us.map((u) => ({ ...u, speaker: u.speaker === 'clinician' ? 'patient' : u.speaker === 'patient' ? 'clinician' : 'unknown' })))} />
           <button disabled={!transcript || busy === 'structure'} onClick={extract} className="btn-ink w-full">
             {busy === 'structure' ? 'Extracting…' : 'Extract record'}
           </button>

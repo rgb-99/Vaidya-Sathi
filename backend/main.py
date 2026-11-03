@@ -95,7 +95,7 @@ async def transcribe(audio: UploadFile = File(...)):
 @app.post('/api/structure')
 async def structure(req: StructureRequest):
     with timed('structure'):
-        rec = await run_in_threadpool(llm.structure, req.transcript)  # also stores the transcript in rec.utterances
+        rec = await run_in_threadpool(llm.structure, req.transcript, req.utterances)
     with timed('redflags'):
         rec.red_flags = redflags.check(rec)
     return rec
@@ -110,15 +110,18 @@ def redflags_route(record: ClinicalRecord):
 @app.post('/api/summary', response_model=SummaryResponse)
 async def summary(req: SummaryRequest):
     require_signed(req.record)
+    if req.language not in config.LANGUAGES:
+        raise HTTPException(400, f'Unsupported language {req.language}.')
     with timed('summary'):
         text, fallback = await run_in_threadpool(llm.summarize, req.record, req.language)
+    spoken = llm.spoken_language(req.language, fallback)
     with timed('speak'):
         try:
-            audio = await run_in_threadpool(voice.speak, text, req.language)
-            return SummaryResponse(text=text, language=req.language, used_fallback=fallback,
+            audio = await run_in_threadpool(voice.speak, text, spoken)
+            return SummaryResponse(text=text, language=spoken, used_fallback=fallback,
                                    audio_base64=base64.b64encode(audio).decode())
         except sarvam_client.SarvamError as e:  # keep the text so the clinician can still read it out
-            return SummaryResponse(text=text, language=req.language, used_fallback=fallback,
+            return SummaryResponse(text=text, language=spoken, used_fallback=fallback,
                                    audio_base64='', audio_error=str(e))
 
 
@@ -181,6 +184,12 @@ def tickets():
 @app.post('/api/card', response_class=HTMLResponse)
 def prescription_card(record: ClinicalRecord):
     return card.render_card(record)
+
+
+@app.get('/api/languages')
+def languages():
+    """Languages with a verified voice. Malayalam and Odia are listed by Bulbul but no voice name was accepted."""
+    return [{'code': c, 'name': n} for c, n in config.LANGUAGES.items() if config.TTS_SPEAKERS.get(c)]
 
 
 @app.get('/api/demo/scenarios')

@@ -13,7 +13,11 @@ import llm
 import main
 import mock_data
 import signoff
-from schemas import ReferralRequest, SignoffRequest, SummaryRequest
+from schemas import ReferralRequest, SignoffRequest, SummaryRequest, Utterance
+
+
+def U(text):
+    return [Utterance(id='u1', text=text)]
 
 
 @pytest.fixture(autouse=True)
@@ -99,14 +103,14 @@ def test_every_said_fact_has_a_verbatim_quote():
 def test_llm_claimed_quote_not_in_transcript_is_rejected():
     rec = mock_data.scenario_record('S1')
     ev = [{'field': 'vitals.bp', 'quote': 'blood pressure is 200/120'}]  # fabricated quote
-    llm.attach_evidence(rec, ev, 'Doctor: BP check kela, 150/95 ahe.')
+    llm.attach_evidence(rec, ev, U('Doctor: BP check kela, 150/95 ahe.'))
     assert 'vitals.bp: 150/95' in rec.said                     # recovered via the literal sentence
     assert 'blood pressure' not in rec.provenance['vitals.bp'].quote
 
 
 def test_value_without_any_quote_goes_to_inferred_not_said():
     rec = mock_data.scenario_record('S1')
-    llm.attach_evidence(rec, [], 'Doctor: BP check kela, 150/95 ahe.')
+    llm.attach_evidence(rec, [], U('Doctor: BP check kela, 150/95 ahe.'))
     assert any('chief_complaints.0: headache' in x and x.startswith('Unverified') for x in rec.inferred)
     assert not any('headache' in x for x in rec.said)
 
@@ -114,7 +118,7 @@ def test_value_without_any_quote_goes_to_inferred_not_said():
 def test_valid_llm_quote_for_a_translated_value_is_accepted():
     rec = mock_data.scenario_record('S1')
     tr = mock_data.SCENARIOS['S1']['transcript']
-    llm.attach_evidence(rec, [{'field': 'chief_complaints.0', 'quote': 'doke dukhtay'}], tr)
+    llm.attach_evidence(rec, [{'field': 'chief_complaints.0', 'quote': 'doke dukhtay'}], U(tr))
     assert 'chief_complaints.0: headache' in rec.said and rec.provenance['chief_complaints.0'].quote == 'doke dukhtay'
 
 

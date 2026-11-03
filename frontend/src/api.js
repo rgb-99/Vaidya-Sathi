@@ -23,7 +23,8 @@ export const transcribe = (blob, filename) => {
   return request('/transcribe', { method: 'POST', body: form })
 }
 
-export const structure = (transcript) => post('/structure', { transcript })
+export const structure = (transcript, utterances = []) => post('/structure', { transcript, utterances })
+export const getLanguages = () => request('/languages')
 export const redflags = (record) => post('/redflags', record)
 export const summary = (record, language) => post('/summary', { record, language })
 export const alertAudio = (red_flags, language) => post('/alert-audio', { red_flags, language })

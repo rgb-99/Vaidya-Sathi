@@ -86,11 +86,12 @@ class SummaryResponse(BaseModel):
 # Request bodies for the section 6 routes
 class StructureRequest(BaseModel):
     transcript: str
+    utterances: List[Utterance] = []   # diarized turns with roles (F18); empty means no speaker separation
 
 
 class SummaryRequest(BaseModel):
     record: ClinicalRecord
-    language: Literal['mr-IN', 'hi-IN', 'en-IN'] = 'mr-IN'
+    language: str = 'mr-IN'
 
 
 class AlertAudioRequest(BaseModel):

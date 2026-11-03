@@ -96,6 +96,8 @@ See [`.env.example`](.env.example) for all variables. Key ones:
 | `LLM_MODEL` | LLM for structuring (default: `sarvam-105b`) |
 | `TTS_MODEL` | Text-to-speech model (default: `bulbul:v4-flash`) |
 | `TTS_SPEAKER_MR/HI/EN` | Voices per language (API-verified, not yet auditioned) |
+| `ENABLE_DIARIZATION` | `true` runs the Batch API for clinician/patient speaker turns (adds about 10 s per clip) |
+| `ENABLE_KEYTERMS` | `true` passes the drug list to STT; measured no gain on the demo clips, so off by default |
 | `STT_MODE` | `codemix` (provisional choice, see `docs/DECISIONS.md`) |
 
 ---
