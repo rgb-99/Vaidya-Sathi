@@ -17,7 +17,7 @@ import SignOff from './components/SignOff.jsx'
 import SummaryPlayer from './components/SummaryPlayer.jsx'
 
 const FALLBACK_LANGS = [{ code: 'mr-IN', name: 'Marathi' }, { code: 'hi-IN', name: 'Hindi' }, { code: 'en-IN', name: 'English' }]
-const DEFAULT_LANG = 'mr-IN'
+const FALLBACK_LANG = 'en-IN'   // only when no language could be detected at all; never an assumed regional language
 const wavSrc = (b64) => `data:audio/wav;base64,${b64}`
 
 export default function App() {
@@ -36,9 +36,9 @@ export default function App() {
     setTheme(next)
   }
   // Language used for the summary, alerts and share page. Auto: the language heard in the audio (or named in the
-  // record); a language without a voice falls back to English, and nothing detected yet falls back to the default.
+  // record); a language without a voice falls back to English, and so does a run where nothing could be detected.
   const supported = (code) => langs.some((l) => l.code === code)
-  const lang = langChoice !== 'auto' ? langChoice : detected ? (supported(detected) ? detected : 'en-IN') : DEFAULT_LANG
+  const lang = langChoice !== 'auto' ? langChoice : detected ? (supported(detected) ? detected : FALLBACK_LANG) : FALLBACK_LANG
   const langName = (code) => langs.find((l) => l.code === code)?.name || code
   const [utterances, setUtterances] = useState([])
   const [transcript, setTranscript] = useState('')
@@ -264,7 +264,7 @@ export default function App() {
 
         {/* 3. patient */}
         <section className="card flex min-h-0 flex-col gap-3 overflow-hidden">
-          <div className="eyebrow">03 · Patient{lang ? ` · ${langName(lang)}${langChoice === 'auto' ? ' (auto)' : ''}` : ''}</div>
+          <div className="eyebrow">03 · Patient{langChoice !== 'auto' ? ` · ${langName(lang)}` : detected ? ` · ${langName(lang)} (auto)` : ' · language auto-detected'}</div>
           <SummaryPlayer summary={summary} audioSrc={summary?.audio_base64 ? wavSrc(summary.audio_base64) : ''}
             canGenerate={confirmed} onGenerate={genSummary} busy={busy === 'summary'}>
             {confirmed && (
