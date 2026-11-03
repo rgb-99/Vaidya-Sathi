@@ -33,7 +33,7 @@ npm install
 npm run dev                     # open http://localhost:5173
 ```
 
-Both at once: `./scripts/dev.sh` (Windows: `.\scripts\dev.ps1`). With `MOCK_MODE=true` every step returns canned data with no network, so you can pick **S1**, **S2** or **S3** in the demo picker and click through the whole flow. The header shows a MOCK MODE badge.
+Both at once: `./scripts/dev.sh` (Windows: `.\scripts\dev.ps1`). With `MOCK_MODE=true` every step returns canned data with no network, so you can pick **S1**, **S2** or **S3** in the demo picker and click through the whole flow (Record, Check, Patient). The header shows a MOCK badge.
 
 ## Using the real Sarvam APIs
 

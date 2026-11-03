@@ -1,5 +1,5 @@
 export default function SaidInferred({ record }) {
-  if (!record.said.length && !record.inferred.length) return null
+  if (!record.said.length && !record.inferred.length) return <p className="card text-center text-sm text-muted">No evidence recorded for this record.</p>
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl border border-line bg-surface p-3">

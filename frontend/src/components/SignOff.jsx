@@ -1,22 +1,27 @@
 import { useState } from 'react'
+import Icon, { Spinner } from './Icon.jsx'
 
+// Lives in the bottom bar of the Check step: the doctor types their name and signs, which locks the record.
 export default function SignOff({ record, onSign, busy }) {
   const [name, setName] = useState('')
   if (record.signed_off_by) {
     return (
-      <div className="rounded-xl border border-green-300 bg-green-50 px-3 py-2 text-sm dark:border-green-800 dark:bg-green-950/40" role="status">
-        <b>Signed off and locked</b> by {record.signed_off_by}, {new Date(record.signed_at).toLocaleString()}
+      <div className="flex min-w-0 items-center gap-2 text-sm text-green-700 dark:text-green-400" role="status">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-green-600 text-white"><Icon name="check" className="h-4 w-4" /></span>
+        <span className="truncate">Signed by <b>{record.signed_off_by}</b> · locked</span>
       </div>
     )
   }
   return (
-    <div className="flex items-end gap-2 rounded-xl border border-line bg-bg p-2">
-      <label className="min-w-0 flex-1"><span className="label">Clinician name (needed to sign off; summary, referral and export stay locked until then)</span>
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Dr …" />
+    <form className="flex min-w-0 flex-1 items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim()) onSign(name.trim()) }}>
+      <label className="relative min-w-0 flex-1">
+        <span className="sr-only">Doctor name (needed to sign off; summary, referral and export stay locked until then)</span>
+        <Icon name="pen" className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+        <input className="input h-12 rounded-full pl-10" value={name} onChange={(e) => setName(e.target.value)} placeholder="Doctor name, to sign" />
       </label>
-      <button disabled={!name.trim() || busy} onClick={() => onSign(name.trim())} className="btn-ink shrink-0">
-        {busy ? 'Signing…' : 'Sign off and lock'}
+      <button type="submit" disabled={!name.trim() || busy} className="btn-accent h-12 shrink-0 px-6">
+        {busy ? <Spinner className="h-4 w-4" /> : <Icon name="lock" className="h-4 w-4" />} <span className="hidden sm:inline">Sign and lock</span><span className="sm:hidden">Sign</span>
       </button>
-    </div>
+    </form>
   )
 }

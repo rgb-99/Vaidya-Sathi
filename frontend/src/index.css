@@ -5,13 +5,13 @@
 /* Colours are CSS variables (space-separated RGB) so one set of classes serves both themes.
    Dark is the default; the toggle in the header stores the choice in localStorage. */
 :root {
-  --bg: 250 250 250; --surface: 255 255 255; --ink: 19 19 19; --muted: 92 92 92; --line: 230 230 230;
-  --accent: 43 43 184; --accent-dark: 31 31 148; --accent-soft: 238 240 255; --linkc: 43 43 184; --on-accent: 255 255 255;
+  --bg: 246 246 247; --surface: 255 255 255; --ink: 19 19 19; --muted: 100 100 106; --line: 228 228 231;
+  --accent: 19 19 19; --accent-dark: 50 50 54; --accent-soft: 240 240 242; --linkc: 43 43 184; --on-accent: 255 255 255;
 }
 .dark {
   /* Pure black screen, white buttons and links; structure comes from thin grey borders. */
-  --bg: 0 0 0; --surface: 0 0 0; --ink: 240 240 240; --muted: 150 150 155; --line: 52 52 56;
-  --accent: 255 255 255; --accent-dark: 215 215 215; --accent-soft: 28 28 30; --linkc: 255 255 255; --on-accent: 0 0 0;
+  --bg: 0 0 0; --surface: 12 12 13; --ink: 242 242 242; --muted: 150 150 155; --line: 44 44 48;
+  --accent: 255 255 255; --accent-dark: 215 215 215; --accent-soft: 26 26 28; --linkc: 255 255 255; --on-accent: 0 0 0;
   color-scheme: dark;
 }
 
@@ -23,14 +23,19 @@
 }
 
 @layer components {
-  .card { @apply bg-surface border border-line rounded-2xl p-4 shadow-sm; }
+  .card { @apply bg-surface border border-line rounded-3xl p-5; }
   .eyebrow { @apply font-mono text-[11px] uppercase tracking-widest text-muted; }
-  .label { @apply block text-[11px] font-medium text-muted mb-0.5; }
-  .input { @apply w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-bg disabled:text-muted; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
+  .label { @apply block text-xs font-medium text-muted mb-1; }
+  .input { @apply w-full rounded-xl border border-line bg-bg px-3 py-2 text-[15px] text-ink placeholder:text-muted/70 transition focus:border-ink/40 focus:outline-none focus:ring-4 focus:ring-ink/10 disabled:opacity-70; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition active:scale-[0.98] disabled:opacity-35 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
+  .btn-lg { @apply px-7 py-4 text-base font-semibold; }
   .btn-ink { @apply btn bg-ink text-bg hover:opacity-85; }
   .btn-accent { @apply btn bg-accent text-onaccent hover:bg-accent-dark; }
-  .btn-danger { @apply btn bg-red-700 text-white hover:bg-red-800; }
-  .btn-outline { @apply btn border border-line bg-surface text-ink hover:bg-bg; }
+  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+  .btn-outline { @apply btn border border-line bg-surface text-ink hover:border-ink/30; }
+  .btn-ghost { @apply btn text-muted hover:text-ink hover:bg-accent-soft; }
+  .icon-btn { @apply grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink transition hover:border-ink/30; }
+  .chip { @apply inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm text-ink transition hover:border-ink/30 disabled:opacity-40; }
+  .tile { @apply flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-surface p-4 text-center text-sm font-medium text-ink transition hover:border-ink/30 active:scale-[0.98] disabled:opacity-40; }
   .link { @apply text-linkc underline underline-offset-2 hover:opacity-80 disabled:opacity-40; }
 }

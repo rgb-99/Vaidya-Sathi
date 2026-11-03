@@ -19,31 +19,31 @@
 **0:00 Problem (20 s).** "Doctors type while talking; patients leave with shorthand they cannot read."
 
 **0:20 Consultation S1 (50 s).**
-1. Press **Record**, role-play S1 (or pick **S1** in the demo picker, which runs the prerecorded clip), press **Stop**. The transcript appears in the editable panel.
-2. Press **Extract record**. Show complaints, BP 150/95, two prescription rows, advice.
-3. Edit one field. Point at the **Said / AI-suggested** panel (each said fact shows its transcript quote). Type the clinician name and press **Sign off and lock record** (the form locks; summary, referral and export need this).
+1. On the **Record** screen, tap the big microphone, role-play S1 (or tap **S1** under "Try a demo", which runs the prerecorded clip), tap it again to stop. The transcript appears in the editable "What was said" box.
+2. Press **Extract details** (bottom right). The **Check** screen opens: show complaints, BP 150/95, two medicines, advice.
+3. Edit one field. Open the **Evidence** tab (each said fact shows its transcript quote; AI-suggested facts are listed separately). Type the doctor name in the bottom bar and press **Sign and lock** (the form locks and the **Patient** screen opens; summary, referral and export need this).
 
-**1:10 Patient summary (30 s).** Press **Generate patient summary**, play the audio. Switch the language to Hindi, press **Generate** again. Point out simple words and the morning, afternoon, night schedule.
+**1:10 Patient summary (30 s).** Press **Make summary**, tap the big play button. Switch the language to Hindi (globe menu in the header), press **Make again**. Point out simple words and the morning, afternoon, night schedule.
 
-**1:40 Emergency S2 (50 s).** Pick **S2**, press **Extract record**. A red banner shows RF_SEPSIS and RF_HYPOTENSION with the matched inputs. Press **Play alert**. Type a clinician name, press **Sign off and lock record**, then **Create referral ticket**. **Export** downloads the FHIR-inspired JSON.
+**1:40 Emergency S2 (50 s).** Press **New patient**, tap **S2**, press **Extract details**. A red "Danger signs found" banner shows RF_SEPSIS and RF_HYPOTENSION with the matched inputs. Press **Play alert**. Type a doctor name, press **Sign and lock**, then **Create referral ticket** on the Patient screen. **Export (JSON)** downloads the FHIR-inspired JSON.
 
 **2:30 Close (30 s).** "Decision support, not decision making. Red flags are fixed rules, the doctor always reviews, built on Sarvam voice and language models."
 
-Optional extras, in the order they appear after sign-off (only demo what you have rehearsed):
-- **Create patient share link** shows a QR code and link; open it on a phone (same network and `PUBLIC_BASE_URL` set to the laptop's address) to show the large-print schedule with the audio.
-- **Download reminder calendar (.ics)**, **Print medicine card**, **Export (FHIR-inspired JSON)**.
-- Tabs: **History** (signed records and tickets), **Analytics** (enter your typing baseline once; shows measured time only, demo runs excluded), **Eval** (latest evaluation report).
-- With `ENABLE_VISION=true`: **Upload photo** of a sample prescription (`demo/prescriptions/rx1.png`) to see what changed against today's record.
-- With `ENABLE_STREAMING=true`: **Record live** shows words as you speak.
-- With `ENABLE_DIARIZATION=true`: coloured clinician and patient turns with **Swap roles** (adds about 10 s).
+Optional extras, on the Patient screen under "Give to the patient" (only demo what you have rehearsed):
+- **Phone link (QR)** shows a QR code and link; open it on a phone (same network and `PUBLIC_BASE_URL` set to the laptop's address) to show the large-print schedule with the audio.
+- **Reminders** (.ics calendar file), **Print card**, **Export (JSON)** (FHIR-inspired).
+- Header menu (☰): **History** (signed records and tickets), **Analytics** (enter your typing baseline once; shows measured time only, demo runs excluded), **Eval** (latest evaluation report).
+- With `ENABLE_VISION=true`: on the Check screen, the **Old prescription** tab, **Upload photo** of a sample prescription (`demo/prescriptions/rx1.png`) to see what changed against today's record.
+- With `ENABLE_STREAMING=true`: **Live (words as you speak)** under the microphone; extraction starts by itself when you stop.
+- With `ENABLE_DIARIZATION=true`: doctor and patient turns as chat bubbles with **Swap doctor / patient** (adds about 10 s).
 
 ## Fallbacks
 
 | Problem | Action |
 | --- | --- |
-| Mic blocked or broken | Use the demo picker (prerecorded clip) or "or upload an audio file". |
+| Mic blocked or broken | Tap a demo under "Try a demo" (prerecorded clip), **Upload audio**, or **Type it instead**. |
 | Network or Sarvam down | Stop the backend, set `MOCK_MODE=true`, restart with `./scripts/dev.sh`. Every step returns canned data (the audio is a placeholder tone). |
-| STT garbage | Edit the transcript and press **Extract record** again. |
+| STT garbage | Go **Back** to Record, edit the transcript and press **Extract details** again. |
 | LLM fails twice | An empty form with a warning appears; fill it by hand. |
 | TTS fails | The summary text still shows with a **Retry** button. |
 

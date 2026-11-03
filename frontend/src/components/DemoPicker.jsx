@@ -1,13 +1,16 @@
-export default function DemoPicker({ scenarios, value, onChange }) {
+import Icon from './Icon.jsx'
+
+export default function DemoPicker({ scenarios, value, onChange, disabled }) {
+  if (!scenarios.length) return null
   return (
-    <select
-      aria-label="Demo scenario"
-      className="rounded-full border border-line bg-surface px-4 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/30"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">Demo scenario…</option>
-      {scenarios.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-    </select>
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <span className="flex items-center gap-1.5 text-xs text-muted"><Icon name="headphones" className="h-4 w-4" /> Try a demo:</span>
+      {scenarios.map((s) => (
+        <button key={s.id} disabled={disabled} onClick={() => onChange(s.id)}
+          className={`chip px-3 py-1.5 text-xs ${value === s.id ? 'border-ink bg-ink text-bg hover:border-ink' : ''}`}>
+          {s.title}
+        </button>
+      ))}
+    </div>
   )
 }
