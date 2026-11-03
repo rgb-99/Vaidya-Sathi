@@ -97,13 +97,6 @@ SUMMARIES = {
     },
 }
 
-ALERT_TEXTS = {
-    'mr-IN': 'सावधान. गंभीर संसर्गाची शक्यता. रुग्णाला तातडीने रुग्णालयात पाठवा आणि डॉक्टरांना कळवा.',
-    'hi-IN': 'सावधान। गंभीर संक्रमण की संभावना। मरीज़ को तुरंत अस्पताल भेजें और डॉक्टर को सूचित करें।',
-    'en-IN': 'Warning. Signs of possible serious infection. Refer the patient to the hospital urgently and inform the doctor.',
-}
-
-
 def scenario_record(sid):
     s = SCENARIOS[sid]
     return ClinicalRecord(**s['record'], red_flags=[RedFlag(**f) for f in s['red_flags']])

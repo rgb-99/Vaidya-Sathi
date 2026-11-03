@@ -18,8 +18,9 @@ import config
 import mock_data
 import sarvam_client
 import llm
+import redflags
 import voice
-from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, StructureRequest,
+from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, StructureRequest, Utterance,
                      SummaryRequest, SummaryResponse)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -85,19 +86,17 @@ async def transcribe(audio: UploadFile = File(...)):
 async def structure(req: StructureRequest):
     with timed('structure'):
         rec = await run_in_threadpool(llm.structure, req.transcript)
-        # Red flags: the deterministic engine (redflags.py) arrives in M4; empty until then (mock mode is canned).
-        return rec
+        # Keep the transcript on the record so later /redflags re-runs can still see symptom keywords.
+        rec.utterances = [Utterance(id='u1', text=req.transcript)]
+    with timed('redflags'):
+        rec.red_flags = redflags.check(rec)
+    return rec
 
 
 @app.post('/api/redflags')
-def redflags(record: ClinicalRecord):
-    require_mock('/api/redflags')
+def redflags_route(record: ClinicalRecord):
     with timed('redflags'):
-        # Canned: the mock rule set only fires for S2's vitals (real engine is M4).
-        v = record.vitals
-        if v.bp == '90/60' and v.temp == '102' and v.pulse == '118':
-            return {'red_flags': mock_data.scenario_record('S2').red_flags}
-        return {'red_flags': []}
+        return {'red_flags': redflags.check(record)}
 
 
 @app.post('/api/summary', response_model=SummaryResponse)
@@ -117,11 +116,13 @@ async def summary(req: SummaryRequest):
 
 
 @app.post('/api/alert-audio')
-def alert_audio(req: AlertAudioRequest):
-    require_mock('/api/alert-audio')
+async def alert_audio(req: AlertAudioRequest):
+    text = redflags.alert_text(req.red_flags, req.language)
+    if not text:
+        raise HTTPException(400, 'No red flags to announce.')
     with timed('alert-audio'):
-        text = mock_data.ALERT_TEXTS.get(req.language, mock_data.ALERT_TEXTS['en-IN'])
-        audio = sarvam_client.tts(text, req.language)
+        lang = req.language if req.language in ('mr-IN', 'hi-IN', 'en-IN') else 'en-IN'
+        audio = await run_in_threadpool(voice.speak, text, lang)
         return {'text': text, 'audio_base64': base64.b64encode(audio).decode()}
 
 
