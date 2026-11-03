@@ -1,28 +1,34 @@
 # Deploying
 
-The frontend is a static Vite build on **Vercel**. The backend runs on **Render** as a Docker container (`Dockerfile`, `render.yaml`), because it needs things Vercel functions do not have: ffmpeg for every transcription, a disk for SQLite (sign-offs, share links, history, analytics, the sign-off key), WebSockets for live mode, and background threads for prescription photos. The browser calls the backend directly (`VITE_API_BASE`): Vercel's proxy has a 30 s limit on proxied requests, which a slow extraction with a retry can exceed.
+The frontend is a static Vite build on **Vercel** (project `vaidya-saathi`, https://vaidya-saathi.vercel.app). The backend runs on **Railway** as a Docker container (`Dockerfile`, `railway.json`) with a volume at `/app/data`.
+
+Why not the backend on Vercel too: Vercel containers can run ffmpeg and WebSockets, but they are stateless and scale to zero after 5 minutes, so the SQLite file (sign-offs, share links, history, analytics, the sign-off key) would be lost, and the spec allows no database other than SQLite. The browser calls the backend directly (`VITE_API_BASE`) rather than through a Vercel rewrite, because Vercel lists a 30 s limit on proxied requests and an extraction with a retry can take longer.
 
 The app has no login. Anyone with the URL can use it, and in real mode every use spends Sarvam credits on your key. Share the URL only with people you trust, and use fake patients only.
 
-## 1. Backend on Render
+## Backend (Railway)
 
-1. Push the repo to GitHub.
-2. Render dashboard: **New → Blueprint**, pick the repo. It reads `render.yaml` and creates `vaidya-saathi-api` (Docker, Starter plan, 1 GB disk at `/app/data`). The disk needs a paid instance; on the free plan records vanish on every deploy.
-3. Fill the variables marked `sync: false`:
-   - `SARVAM_API_KEY`: your key (never commit it).
-   - `TTS_SPEAKER_MR`, `TTS_SPEAKER_HI`, `TTS_SPEAKER_EN`: the voice names from your local `.env`. Any other variables you changed locally (for example `ENABLE_STREAMING`) can be added the same way.
-   - `CORS_ORIGIN` and `PUBLIC_BASE_URL`: put a placeholder for now, set them in step 3.
-4. When it is live, check `https://<backend>.onrender.com/api/health` returns `{"status":"ok","mock":false}`.
+```bash
+npx @railway/cli login
+npx @railway/cli init --name vaidya-saathi-api        # once
+npx @railway/cli up --detach                          # uploads the repo (minus .dockerignore) and builds the Dockerfile
+npx @railway/cli volume add --mount-path /app/data    # once
+npx @railway/cli domain                               # once: prints https://<name>.up.railway.app
+```
 
-## 2. Frontend on Vercel
+Variables (`npx @railway/cli variables --set KEY=value`): `SARVAM_API_KEY`, `TTS_SPEAKER_MR`, `TTS_SPEAKER_HI`, `TTS_SPEAKER_EN` (from your local `.env`), `MOCK_MODE=false`, `STT_MODE=codemix`, and `CORS_ORIGIN` and `PUBLIC_BASE_URL` both set to the Vercel URL (no trailing slash; one origin only, so Vercel preview URLs are blocked). Model names default to the values in `.env.example`.
 
-1. Vercel dashboard: **Add New → Project**, import the repo, set **Root Directory** to `frontend` (it reads `frontend/vercel.json`).
-2. Environment variable: `VITE_API_BASE` = `https://<backend>.onrender.com` (no trailing slash needed). It is baked in at build time, so redeploy after changing it.
-3. Deploy and note the URL, e.g. `https://vaidya-saathi.vercel.app`.
+Check: `https://<backend>/api/health` returns `{"status":"ok","mock":false}`.
 
-## 3. Connect them
+## Frontend (Vercel)
 
-On Render set `CORS_ORIGIN` and `PUBLIC_BASE_URL` to the exact Vercel URL (no trailing slash) and redeploy. `CORS_ORIGIN` allows one origin, so Vercel preview URLs are blocked; use the production URL.
+```bash
+cd frontend
+npx vercel login
+npx vercel link --yes --project vaidya-saathi                  # once
+npx vercel env add VITE_API_BASE production                     # the Railway URL; baked in at build time
+npx vercel deploy --prod
+```
 
 ## Check
 

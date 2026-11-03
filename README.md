@@ -123,7 +123,7 @@ Red-flag and safety rules in this project are **demo-grade screening rules for d
 | [`docs/SAFETY.md`](docs/SAFETY.md) | Safety rules and review status |
 | [`docs/EVAL.md`](docs/EVAL.md) | Evaluation guide and latest results |
 | [`docs/DEMO.md`](docs/DEMO.md) | Demo runbook |
-| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Hosting: frontend on Vercel, backend on Render (Docker) |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Hosting: frontend on Vercel, backend on Railway (Docker) |
 | [`docs/PITCH.md`](docs/PITCH.md) | Pitch text (numbers cite the evaluation report) |
 | [`docs/SOURCES.md`](docs/SOURCES.md) | Where every number comes from |
 
