@@ -5,6 +5,7 @@ import Recorder from './components/Recorder.jsx'
 import RecordForm from './components/RecordForm.jsx'
 import RedFlagBanner from './components/RedFlagBanner.jsx'
 import DiarizedTranscript from './components/DiarizedTranscript.jsx'
+import Analytics from './components/Analytics.jsx'
 import EvalPage from './components/EvalPage.jsx'
 import History from './components/History.jsx'
 import OfflineQueue from './components/OfflineQueue.jsx'
@@ -35,6 +36,8 @@ export default function App() {
   const [vision, setVision] = useState(false)
   const [streaming, setStreaming] = useState(false)
   const live = useRef({ text: '', timer: null })
+  const startedAt = useRef('')   // when the transcript became available: the start of the measured documentation time
+  const markStart = () => { if (!startedAt.current) startedAt.current = new Date().toISOString() }
   const [includeDx, setIncludeDx] = useState(false)
   const [summary, setSummary] = useState(null)
   const [alertSrc, setAlertSrc] = useState('')
@@ -52,6 +55,7 @@ export default function App() {
 
   // Apply a /transcribe result: text, speaker turns, and the detected language unless the user chose one.
   const applyTranscript = (r) => {
+    if (r.transcript?.trim()) markStart()
     setTranscript(r.transcript)
     setUtterances(r.utterances || [])
     if (r.notice) setError(r.notice)
@@ -61,6 +65,7 @@ export default function App() {
 
   // Live mode: words are appended as they arrive, and the form is re-filled every few seconds (debounced).
   const livePartial = (text) => {
+    markStart()
     live.current.text = `${live.current.text} ${text}`.trim()
     setTranscript(live.current.text)
     setUtterances([])
@@ -88,6 +93,7 @@ export default function App() {
   // Picking a demo scenario sends its prerecorded clip through the real pipeline (STT is canned in mock mode).
   const pickScenario = async (id) => {
     setScenarioId(id)
+    startedAt.current = ''
     setTranscript(''); setUtterances([])
     setRecord(null); setConfirmed(false); setRecordId(null); setSummary(null); setAlertSrc(''); setTicket(null); setShareInfo(null)
     const s = scenarios.find((x) => x.id === id)
@@ -134,7 +140,8 @@ export default function App() {
     setAlertSrc(wavSrc(r.audio_base64))
   })
   const signOff = (name) => run('signoff', async () => {
-    const r = await api.signoff(record, name)
+    const r = await api.signoff(record, name, startedAt.current, Boolean(scenarioId))
+    startedAt.current = ''
     setRecord(r.record)
     setRecordId(r.id)
     setConfirmed(true)
@@ -159,7 +166,7 @@ export default function App() {
           <h1 className="text-xl font-semibold tracking-tight">Vaidya Saathi</h1>
           {mock && <span className="rounded-full bg-orange-100 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider text-orange-800">mock mode</span>}
           <nav className="flex gap-1 text-sm">
-            {[['consult', 'Consultation'], ['history', 'History'], ['eval', 'Eval']].map(([v, label]) => (
+            {[['consult', 'Consultation'], ['history', 'History'], ['stats', 'Analytics'], ['eval', 'Eval']].map(([v, label]) => (
               <button key={v} onClick={() => setView(v)} className={`rounded-full px-3 py-1.5 ${view === v ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}>{label}</button>
             ))}
           </nav>
@@ -182,7 +189,7 @@ export default function App() {
         </div>
       )}
 
-      {view === 'history' ? <History /> : view === 'eval' ? <EvalPage /> : (
+      {view === 'history' ? <History /> : view === 'eval' ? <EvalPage /> : view === 'stats' ? <Analytics /> : (
       <main className="mx-auto grid max-w-7xl gap-5 px-5 py-6 md:grid-cols-3">
         <section className="card space-y-4">
           <div className="eyebrow">01 — Record</div>
@@ -190,7 +197,7 @@ export default function App() {
           <div>
             <span className="label">Transcript (editable)</span>
             <textarea className="input h-56" placeholder="Transcript appears here"
-              value={transcript} onChange={(e) => { setTranscript(e.target.value); setUtterances([]) }} />
+              value={transcript} onChange={(e) => { if (e.target.value.trim()) markStart(); setTranscript(e.target.value); setUtterances([]) }} />
           </div>
           <OfflineQueue onUse={applyTranscript} />
           <DiarizedTranscript utterances={utterances} onSwap={() => setUtterances((us) => us.map((u) => ({ ...u, speaker: u.speaker === 'clinician' ? 'patient' : u.speaker === 'patient' ? 'clinician' : 'unknown' })))} />

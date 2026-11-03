@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+import analytics
 import card
 import config
 import db
@@ -32,7 +33,7 @@ import share
 import signoff
 import vision
 import voice
-from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, ReconcileRequest, ShareRequest, StructureRequest,
+from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, BaselineRequest, ReconcileRequest, ShareRequest, StructureRequest,
                      SignoffRequest, SummaryRequest, SummaryResponse)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -182,7 +183,22 @@ def sign_off(req: SignoffRequest):
         signed = signoff.sign(req.record, req.clinician_name)
     except ValueError as e:
         raise HTTPException(400, str(e))
-    return {'record': signed, 'id': db.save_record(signed)}
+    record_id = db.save_record(signed)
+    analytics.record_consultation(record_id, signed, req.started_at, req.demo)
+    return {'record': signed, 'id': record_id}
+
+
+@app.get('/api/analytics')
+def analytics_summary():
+    return analytics.summary()
+
+
+@app.put('/api/analytics/baseline')
+def set_baseline(req: BaselineRequest):
+    if not 0 < req.minutes <= 120:
+        raise HTTPException(400, 'Enter the minutes you normally spend typing one record (1 to 120).')
+    db.set_setting('typing_baseline_minutes', req.minutes)
+    return analytics.summary()
 
 
 @app.get('/api/export/{record_id}.json')

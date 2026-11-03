@@ -80,7 +80,7 @@ python scripts/synthesize_demo_clips.py  # regenerate the synthetic stand-in cli
 
 STT mode chosen: `codemix` (provisional, from 3 synthetic clips; see `docs/DECISIONS.md`). Change it with `STT_MODE` in `.env`.
 
-> **Status:** the full pipeline is real when `MOCK_MODE=false`: transcription (M1), structured extraction (M2), patient summary and speech (M3), deterministic red flags and spoken alerts (M4), demo picker (M5). `MOCK_MODE=true` returns canned data for every step with no key and no network. Referral tickets are still mock data; history, sign-off, share page and the other advanced features are not built yet.
+> **Status:** transcription (M1), structured extraction (M2), patient summary and speech in 9 languages (M3), deterministic red flags and spoken alerts (M4), demo picker (M5), referral tickets, history and a printable card (M6), clinician sign-off enforced on the server, said-versus-inferred and an audit trail with a FHIR-inspired export (M7), speaker diarization and role-aware extraction (M8), an evaluation harness (M9), a patient share page with QR, a reminder calendar and prescription safety checks (M10), prescription photo reading and reconciliation (M11), and real-time streaming, offline-first capture, PII masking and analytics (M12). `MOCK_MODE=true` returns canned data for every step with no key and no network.
 
 ---
 
@@ -96,6 +96,10 @@ See [`.env.example`](.env.example) for all variables. Key ones:
 | `LLM_MODEL` | LLM for structuring (default: `sarvam-105b`) |
 | `TTS_MODEL` | Text-to-speech model (default: `bulbul:v4-flash`) |
 | `TTS_SPEAKER_MR/HI/EN` | Voices per language (API-verified, not yet auditioned) |
+| `ENABLE_STREAMING` | `true` turns on live transcription ("Record live") |
+| `ENABLE_VISION` | `true` turns on prescription photo reading |
+| `ENABLE_PII_MASKING` | `true` (default) masks names, phones and long numbers before the chat model |
+| `PRODUCTION_MODE` | `true` ignores prescription safety rules that have no reviewer |
 | `ENABLE_DIARIZATION` | `true` runs the Batch API for clinician/patient speaker turns (adds about 10 s per clip) |
 | `ENABLE_KEYTERMS` | `true` passes the drug list to STT; measured no gain on the demo clips, so off by default |
 | `STT_MODE` | `codemix` (provisional choice, see `docs/DECISIONS.md`) |

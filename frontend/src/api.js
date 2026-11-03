@@ -30,7 +30,7 @@ export const summary = (record, language) => post('/summary', { record, language
 export const alertAudio = (red_flags, language) => post('/alert-audio', { red_flags, language })
 export const referral = (record, record_id) => post('/referral', { record, confirmed: true, record_id })
 
-export const signoff = (record, clinician_name) => post('/signoff', { record, clinician_name })
+export const signoff = (record, clinician_name, started_at = '', demo = false) => post('/signoff', { record, clinician_name, started_at, demo })
 export const getRecords = () => request('/records')
 export const getTickets = () => request('/tickets')
 export const getCardHtml = async (record) => {

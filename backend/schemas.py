@@ -108,6 +108,8 @@ class ReferralRequest(BaseModel):
 class SignoffRequest(BaseModel):
     record: ClinicalRecord
     clinician_name: str = ''
+    started_at: str = ''     # ISO time the transcript became available (browser clock); '' = not measured
+    demo: bool = False       # true for runs started from the demo picker; excluded from minutes saved
 
 
 class ShareRequest(BaseModel):
@@ -119,3 +121,7 @@ class ShareRequest(BaseModel):
 class ReconcileRequest(BaseModel):
     record: ClinicalRecord
     previous: List[dict] = []   # items read from an older prescription photo
+
+
+class BaselineRequest(BaseModel):
+    minutes: float
