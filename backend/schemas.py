@@ -99,3 +99,4 @@ class AlertAudioRequest(BaseModel):
 class ReferralRequest(BaseModel):
     record: ClinicalRecord
     confirmed: bool = False
+    record_id: int | None = None

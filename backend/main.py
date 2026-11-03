@@ -9,12 +9,14 @@ from pathlib import Path
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+import card
 import config
+import db
 import mock_data
 import sarvam_client
 import llm
@@ -130,19 +132,35 @@ async def alert_audio(req: AlertAudioRequest):
 def referral(req: ReferralRequest):
     if req.confirmed is not True:
         raise HTTPException(400, 'Referral requires confirmed=true.')
-    require_mock('/api/referral')
     with timed('referral'):
         rec = req.record
-        return {
-            'ticket_id': 'T-' + uuid.uuid4().hex[:8].upper(),
-            'created_at': datetime.now(timezone.utc).isoformat(),
-            'destination': 'District Hospital',
-            'payload': {
-                'patient': rec.patient.model_dump(),
-                'vitals': rec.vitals.model_dump(),
-                'red_flags': [f.model_dump() for f in rec.red_flags],
-            },
-        }
+        record_id = req.record_id if req.record_id is not None else db.save_record(rec)
+        return db.save_ticket(record_id, {
+            'patient': rec.patient.model_dump(),
+            'vitals': rec.vitals.model_dump(),
+            'red_flags': [f.model_dump() for f in rec.red_flags],
+        })
+
+
+@app.post('/api/records')
+def confirm_record(record: ClinicalRecord):
+    """Called when the clinician confirms the record: persists it and returns its id."""
+    return {'id': db.save_record(record)}
+
+
+@app.get('/api/records')
+def records():
+    return db.list_records()
+
+
+@app.get('/api/tickets')
+def tickets():
+    return db.list_tickets()
+
+
+@app.post('/api/card', response_class=HTMLResponse)
+def prescription_card(record: ClinicalRecord):
+    return card.render_card(record)
 
 
 @app.get('/api/demo/scenarios')
@@ -158,9 +176,3 @@ def demo_scenarios():
             'transcript': s['transcript'] if config.MOCK_MODE or not ref.exists() else ref.read_text(encoding='utf-8').strip(),
         })
     return out
-
-
-@app.get('/api/records')
-def records():
-    require_mock('/api/records')
-    return []

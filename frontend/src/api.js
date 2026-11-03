@@ -27,4 +27,13 @@ export const structure = (transcript) => post('/structure', { transcript })
 export const redflags = (record) => post('/redflags', record)
 export const summary = (record, language) => post('/summary', { record, language, confirmed: true })
 export const alertAudio = (red_flags, language) => post('/alert-audio', { red_flags, language })
-export const referral = (record) => post('/referral', { record, confirmed: true })
+export const referral = (record, record_id) => post('/referral', { record, confirmed: true, record_id })
+
+export const saveRecord = (record) => post('/records', record)
+export const getRecords = () => request('/records')
+export const getTickets = () => request('/tickets')
+export const getCardHtml = async (record) => {
+  const res = await fetch('/api/card', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) })
+  if (!res.ok) throw new Error('Could not build the printable card.')
+  return res.text()
+}
