@@ -73,58 +73,65 @@ export default function App() {
   const urgent = record?.red_flags.some((f) => f.severity === 'urgent')
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <header className="bg-blue-900 text-white p-3 space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-xl font-bold">Vaidya Saathi</h1>
-          {mock && <span className="bg-yellow-400 text-black text-xs font-bold px-2 py-0.5 rounded">MOCK MODE</span>}
-          <select className="text-black rounded px-2 py-1 ml-auto" value={lang} onChange={(e) => setLang(e.target.value)}>
-            {LANGS.map(([c, n]) => <option key={c} value={c}>{n}</option>)}
-          </select>
-          <DemoPicker scenarios={scenarios} value={scenarioId} onChange={pickScenario} />
+    <div className="min-h-screen">
+      <header className="border-b border-line bg-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-5 py-4">
+          <h1 className="text-xl font-semibold tracking-tight">Vaidya Saathi</h1>
+          {mock && <span className="rounded-full bg-orange-100 px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-wider text-orange-800">mock mode</span>}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <select aria-label="Language" className="rounded-full border border-line bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30" value={lang} onChange={(e) => setLang(e.target.value)}>
+              {LANGS.map(([c, n]) => <option key={c} value={c}>{n}</option>)}
+            </select>
+            <DemoPicker scenarios={scenarios} value={scenarioId} onChange={pickScenario} />
+          </div>
         </div>
-        <p className="text-sm font-semibold">AI-assisted documentation. Clinician must review. Not a substitute for medical judgement.</p>
+        <p className="bg-ink px-5 py-2 text-center text-sm font-medium text-white">
+          AI-assisted documentation. Clinician must review. Not a substitute for medical judgement.
+        </p>
       </header>
 
-      {error && <div className="bg-red-100 text-red-900 p-2 text-center" role="alert">{error}</div>}
+      {error && <div className="border-b border-red-200 bg-red-50 px-5 py-2 text-center text-sm text-red-900" role="alert">{error}</div>}
 
-      <main className="grid gap-4 p-4 md:grid-cols-3">
-        <section className="space-y-3">
-          <h2 className="font-bold">1. Recorder and transcript</h2>
+      <main className="mx-auto grid max-w-7xl gap-5 px-5 py-6 md:grid-cols-3">
+        <section className="card space-y-4">
+          <div className="eyebrow">01 — Record</div>
           <Recorder scenarioId={scenarioId} onAudio={onAudio} busy={busy === 'transcribe'} />
-          <textarea className="border rounded w-full p-2 h-56" placeholder="Transcript appears here (editable)"
-            value={transcript} onChange={(e) => setTranscript(e.target.value)} />
-          <button disabled={!transcript || busy === 'structure'} onClick={extract} className="w-full bg-blue-700 text-white rounded py-2 disabled:opacity-40">
+          <div>
+            <span className="label">Transcript (editable)</span>
+            <textarea className="input h-56" placeholder="Transcript appears here"
+              value={transcript} onChange={(e) => setTranscript(e.target.value)} />
+          </div>
+          <button disabled={!transcript || busy === 'structure'} onClick={extract} className="btn-ink w-full">
             {busy === 'structure' ? 'Extracting…' : 'Extract record'}
           </button>
         </section>
 
-        <section className="space-y-3">
-          <h2 className="font-bold">2. Clinical record</h2>
+        <section className="card space-y-4">
+          <div className="eyebrow">02 — Review</div>
           {record ? (
             <>
               <RedFlagBanner flags={record.red_flags} onPlay={playAlert} />
               {alertSrc && <audio controls autoPlay src={alertSrc} className="w-full" />}
               <RecordForm record={record} onChange={onRecordChange} locked={confirmed} />
-              <button disabled={confirmed} onClick={() => setConfirmed(true)} className="w-full bg-green-700 text-white rounded py-2 disabled:opacity-60">
+              <button disabled={confirmed} onClick={() => setConfirmed(true)} className="btn-ink w-full">
                 {confirmed ? 'Record confirmed' : 'Confirm record'}
               </button>
             </>
-          ) : <p className="text-gray-500">Extract a record from the transcript to begin.</p>}
+          ) : <p className="text-sm text-muted">Extract a record from the transcript to begin.</p>}
         </section>
 
-        <section className="space-y-3">
-          <h2 className="font-bold">3. Patient summary</h2>
+        <section className="card space-y-4">
+          <div className="eyebrow">03 — Patient summary</div>
           <SummaryPlayer summary={summary} audioSrc={summary && wavSrc(summary.audio_base64)}
             canGenerate={confirmed} onGenerate={genSummary} busy={busy === 'summary'}>
             {confirmed && urgent && (
-              <div className="border rounded p-3 bg-white space-y-2">
-                <button disabled={busy === 'referral'} onClick={makeTicket} className="bg-red-700 text-white rounded px-3 py-2">Create referral ticket</button>
+              <div className="space-y-3 rounded-xl border border-line bg-bg p-4">
+                <button disabled={busy === 'referral'} onClick={makeTicket} className="btn-danger">Create referral ticket</button>
                 {ticket && (
                   <div className="text-sm">
-                    <div className="font-bold">Ticket {ticket.ticket_id}</div>
-                    <div>To: {ticket.destination}</div>
-                    <div>{new Date(ticket.created_at).toLocaleString()}</div>
+                    <div className="font-semibold">Ticket {ticket.ticket_id}</div>
+                    <div className="text-muted">To: {ticket.destination}</div>
+                    <div className="text-muted">{new Date(ticket.created_at).toLocaleString()}</div>
                   </div>
                 )}
               </div>

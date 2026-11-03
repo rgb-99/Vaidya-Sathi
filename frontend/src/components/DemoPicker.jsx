@@ -1,7 +1,12 @@
 export default function DemoPicker({ scenarios, value, onChange }) {
   return (
-    <select className="border rounded px-2 py-1 text-black" value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="">Pick demo scenario…</option>
+    <select
+      aria-label="Demo scenario"
+      className="rounded-full border border-line bg-white px-4 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/30"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">Demo scenario…</option>
       {scenarios.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
     </select>
   )

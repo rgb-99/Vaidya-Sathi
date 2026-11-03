@@ -1,18 +1,19 @@
 export default function SummaryPlayer({ summary, audioSrc, canGenerate, onGenerate, busy, children }) {
   return (
-    <div className="space-y-3">
-      <button disabled={!canGenerate || busy} onClick={onGenerate} className="w-full bg-green-700 text-white rounded py-2 disabled:opacity-40">
+    <div className="space-y-4">
+      <button disabled={!canGenerate || busy} onClick={onGenerate} className="btn-accent w-full">
         {busy ? 'Generating…' : 'Generate patient summary'}
       </button>
-      {!canGenerate && <p className="text-xs text-gray-600">Confirm the record first.</p>}
-      {summary && <p className="border rounded p-2 bg-white">{summary.text}</p>}
-      {audioSrc && (
+      {!canGenerate && <p className="text-xs text-muted">Confirm the record first.</p>}
+      {summary && <p className="rounded-xl border border-line bg-bg p-4 text-base leading-relaxed">{summary.text}</p>}
+      {audioSrc ? (
         <>
           <audio controls src={audioSrc} className="w-full" />
-          <a className="text-blue-700 text-sm underline" href={audioSrc} download="summary.wav">Download audio</a>
+          <a className="link text-sm" href={audioSrc} download="summary.wav">Download audio</a>
         </>
+      ) : (
+        <div className="rounded-xl border border-dashed border-line p-4 text-center text-sm text-muted">Audio player placeholder</div>
       )}
-      {!audioSrc && <div className="border border-dashed rounded p-3 text-center text-sm text-gray-500">Audio player placeholder</div>}
       {children}
     </div>
   )

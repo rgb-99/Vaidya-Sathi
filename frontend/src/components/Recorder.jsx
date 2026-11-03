@@ -78,16 +78,16 @@ export default function Recorder({ scenarioId, onAudio, busy }) {
       <button
         disabled={busy}
         onClick={recording ? stop : start}
-        className={`w-full py-4 rounded text-white text-lg font-semibold disabled:opacity-50 ${recording ? 'bg-red-600 animate-pulse' : 'bg-blue-700'}`}
+        className={`w-full rounded-full py-4 text-lg font-medium text-white transition disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${recording ? 'bg-red-600 animate-pulse' : 'bg-accent hover:bg-accent-dark'}`}
       >
         {busy ? 'Transcribing…' : recording ? `Stop  ${fmt(seconds)}` : 'Record'}
       </button>
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-3 text-sm">
         <input ref={fileInput} type="file" accept="audio/*" onChange={onFile} className="hidden" />
-        <button disabled={busy || recording} onClick={() => fileInput.current.click()} className="text-blue-700 underline disabled:opacity-40">
+        <button disabled={busy || recording} onClick={() => fileInput.current.click()} className="link">
           or upload an audio file
         </button>
-        <span className="text-gray-500">max {fmt(MAX_SECONDS)}</span>
+        <span className="ml-auto font-mono text-xs text-muted">max {fmt(MAX_SECONDS)}</span>
       </div>
       {error && <p className="text-sm text-red-700" role="alert">{error}</p>}
     </div>
