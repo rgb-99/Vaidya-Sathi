@@ -106,4 +106,6 @@ wav_bytes = base64.b64decode("".join(r.audios))
 - [ ] Confirm diarization parameter name.
 - [ ] Confirm key-term prompting parameter name.
 - [ ] List all supported TTS languages.
+- [ ] Pick one verified speaker per language (mr-IN, hi-IN, en-IN) and put them in `.env`.
+      Test each with `python scripts/test_voice.py mr-IN <speaker> "नमस्कार"`.
 

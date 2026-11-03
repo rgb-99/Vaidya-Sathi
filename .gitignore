@@ -1,15 +1,22 @@
 .env
+.env.*
+!.env.example
 __pycache__/
 *.pyc
+.venv/
+venv/
+.pytest_cache/
 node_modules/
 dist/
 data/
 *.db
+*.log
 .vite/
 .DS_Store
+.claude/settings.local.json
 eval/results/
 
-# Audio files are ignored by default, but demo audio is tracked
+# Audio is ignored by default, but demo audio is tracked
 *.wav
 *.webm
 !demo/audio/**

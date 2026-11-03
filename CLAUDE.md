@@ -107,6 +107,16 @@ uvicorn main:app --reload --port 8000
 - `backend/schemas.py` — Pydantic models (the data contract)
 - `backend/sarvam_client.py` — the ONLY file that imports `sarvamai`
 
+## Extra Rules
+
+- `docs/SPEC.md` sections 18 and 19 define the advanced features (F13 to F30). Read them before starting M7.
+- Never read, print, or commit `.env`.
+- Ask before adding any dependency that is not already in the spec.
+- After every milestone, run the unit tests and `python eval/run_eval.py` (once it exists).
+- Log every technical choice in `docs/DECISIONS.md` and tick items off the TODO list in `docs/SARVAM_NOTES.md` as you verify them from the docs.
+- Clinician sign-off is required before summary audio, share link, export, or referral.
+- Use the run commands in this file only. Do not invent alternatives.
+
 ## Quality Gates
 
 - After every milestone, run unit tests and confirm the app starts.
@@ -114,3 +124,4 @@ uvicorn main:app --reload --port 8000
 - Eval target: ≥90% field extraction accuracy on 3 demo scenarios.
 - Zero invented drugs or doses across test runs.
 
+- Keep docs in sync: after each milestone, update README.md, docs/DEMO.md, docs/EVAL.md and docs/SOURCES.md if commands, features, or paths changed. Commit the final evaluation report at eval/reports/latest.json (eval/results/ stays gitignored). Never write unverified numbers or ABDM/FHIR compliance claims into docs/PITCH.md.
