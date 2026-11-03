@@ -2,137 +2,129 @@
 
 Ambient clinical documentation, red-flag triage support, and vernacular patient summaries. Built for Sarvam Campus x IIIT Pune '26.
 
----
-
-## What It Does
-
-A doctor or health worker simply talks. The app:
-
-1. **Listens** to the code-mixed Marathi/Hindi/English conversation.
-2. **Fills** the clinical record automatically.
-3. **Flags** urgent red-flag risks using fixed protocol rules (not AI).
-4. **Speaks** a simple medicine-schedule summary back to the patient in their own language.
-
 > **AI-assisted documentation. Clinician must review. Not a substitute for medical judgement.**
 
----
-
-## Tech Stack
-
-- **Frontend:** React (Vite) + Tailwind CSS
-- **Backend:** Python 3.11 + FastAPI + Pydantic v2 + SQLite
-- **AI:** Sarvam AI (Saaras STT, sarvam-105b LLM, Bulbul TTS)
+A doctor or health worker simply talks. The app listens to the code-mixed Marathi/Hindi/English conversation, fills the clinical record, flags urgent danger signs with fixed rules (not AI), and speaks a simple medicine schedule back to the patient in their own language. All demo data is fake.
 
 ---
 
-## Quick Start
+## Quick start (no API key needed)
 
-### 1. Clone and set up environment
+Needs Python 3.11 or newer (developed and tested on 3.14) and Node 18 or newer.
 
 ```bash
 git clone <repo-url>
 cd vaidya-saathi
-cp .env.example .env
-# Edit .env and add your SARVAM_API_KEY
-```
+cp .env.example .env            # then set MOCK_MODE=true in .env
 
-### 2. Backend
+python3 -m venv .venv
+. .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install -r backend/requirements.txt
 
-```bash
 cd backend
-pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-### 3. Frontend (or both at once: `./scripts/dev.sh`, Windows `.\scripts\dev.ps1`)
+In a second terminal:
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev                     # open http://localhost:5173
 ```
 
-> **System requirement:** `ffmpeg` and `ffprobe` (used to decode browser WebM and split audio longer than 30 s). Not needed in mock mode.
+Both at once: `./scripts/dev.sh` (Windows: `.\scripts\dev.ps1`). With `MOCK_MODE=true` every step returns canned data with no network, so you can pick **S1**, **S2** or **S3** in the demo picker and click through the whole flow. The header shows a MOCK MODE badge.
 
-### 4. Mock Mode (no API key needed)
+## Using the real Sarvam APIs
+
+1. Put your key in `.env` (`SARVAM_API_KEY=`), set `MOCK_MODE=false`. Never commit `.env`.
+2. Install **ffmpeg** and **ffprobe** (system packages; used to decode browser audio and split clips over 30 s).
+3. Check the key: `python scripts/smoke_sarvam.py` (from the repo root).
+4. Start the app as above.
+
+Optional features are switched by environment variable (see the table below): live transcription, speaker separation, prescription photos.
+
+## Tests and evaluation
 
 ```bash
-# Set MOCK_MODE=true in .env, then start the backend
-cd backend
-uvicorn main:app --reload --port 8000
-# All endpoints return canned data — full UI works offline
+cd backend && pytest tests/                 # unit tests (no network needed)
+RUN_LIVE=1 pytest tests/test_structure_eval.py -s   # live extraction check, needs a key
+
+python eval/build_scenarios.py              # (re)writes eval/scenarios.jsonl (32 synthetic scripts)
+python eval/run_eval.py --all               # text mode: LLM calls only
+python eval/synthesize_audio.py --yes       # builds synthetic audio with Bulbul (prints the call estimate first)
+python eval/run_eval.py --all --mode audio --diarize --keyterms-ab
 ```
 
-### 5. Sarvam Onboarding (verify your API key)
-
-```bash
-# From the repo root
-python scripts/smoke_sarvam.py
-```
-
-### 6. Compare speech-to-text modes (needs a real key)
-
-```bash
-# From the repo root
-python scripts/compare_stt.py            # every clip in demo/audio, modes transcribe and codemix
-python scripts/synthesize_demo_clips.py  # regenerate the synthetic stand-in clips (see demo/README.md)
-```
-
-STT mode chosen: `codemix` (provisional, from 3 synthetic clips; see `docs/DECISIONS.md`). Change it with `STT_MODE` in `.env`.
-
-> **Status:** transcription (M1), structured extraction (M2), patient summary and speech in 9 languages (M3), deterministic red flags and spoken alerts (M4), demo picker (M5), referral tickets, history and a printable card (M6), clinician sign-off enforced on the server, said-versus-inferred and an audit trail with a FHIR-inspired export (M7), speaker diarization and role-aware extraction (M8), an evaluation harness (M9), a patient share page with QR, a reminder calendar and prescription safety checks (M10), prescription photo reading and reconciliation (M11), and real-time streaming, offline-first capture, PII masking and analytics (M12). `MOCK_MODE=true` returns canned data for every step with no key and no network.
+The latest committed report is `eval/reports/latest.json` (also shown on the Eval tab). Results, definitions and caveats: [`docs/EVAL.md`](docs/EVAL.md). The evaluation is on **synthetic scripts and synthetic speech**, not real clinic audio.
 
 ---
 
-## Environment Variables
+## What is built
 
-See [`.env.example`](.env.example) for all variables. Key ones:
+| Area | Features |
+|------|----------|
+| Capture | Browser microphone, file upload, demo clips, optional live transcription, offline queue that syncs later |
+| Record | Transcript to structured record (schema validated, retry, formulary spelling fix), editable form, said-versus-inferred panel with transcript quotes |
+| Safety | Deterministic red flags with the matched inputs, spoken alerts, prescription safety checks (duplicate drug, same class, allergy), PII masking before the language model |
+| Control | Clinician sign-off enforced on the server before summary audio, referral, share link, export and reminder file |
+| Patient | Plain-language schedule spoken in 9 languages, printable medicine card, share page with QR code, `.ics` reminder file |
+| Records | Referral tickets and history in SQLite, FHIR-inspired JSON export with an audit trail, analytics of measured time saved |
+| Extras | Speaker separation (clinician/patient), prescription photo reading and reconciliation, evaluation harness |
+
+## What is not built or not verified
+
+- **No real-clinic validation.** Everything was tested on synthetic scripts and synthetic speech.
+- **Safety rules are unreviewed.** No clinician has reviewed the red-flag or prescription safety rules ([`docs/SAFETY.md`](docs/SAFETY.md)). The RF_HYPOTENSION threshold needed a decision (systolic 90 or below) and is flagged for review. The dose-limit table is deliberately empty.
+- **Not tested in a real browser by the author:** microphone recording, live transcription, the offline queue and service worker, and the print dialog. The server sides of these were tested with recordings and unit tests.
+- **Voices were not auditioned.** The text-to-speech voices were accepted by the API but nobody has listened to them. Malayalam and Odia are not offered because no voice name was accepted.
+- **Speech recognition is imperfect.** On synthetic audio the model once heard one drug as another; the clinician's review is the safeguard. Handwriting recognition was only tried on printed text in a handwriting-style font.
+- **PII masking is best effort.** Names are found by cue words ("my name is", "Mr.", "श्री"), not by a name model. Audio itself is not masked.
+- **No accounts or login.** Sign-off records a typed clinician name, not an identity. Anyone with a share link can view it until it expires. Share rate limiting is in memory.
+- **FHIR-inspired is not FHIR-compliant.** No ABDM or FHIR compliance is claimed.
+- Not done: more voices and languages beyond the nine, real deployment hardening, clinician-reviewed rule sets.
+
+## Environment variables
+
+See [`.env.example`](.env.example). Model names live in variables so they can change without code edits.
 
 | Variable | Purpose |
 |----------|---------|
-| `SARVAM_API_KEY` | Your Sarvam AI API key |
-| `MOCK_MODE` | `true` to run without network/API key |
-| `STT_MODEL` | Speech-to-text model (default: `saaras:v4`) |
-| `LLM_MODEL` | LLM for structuring (default: `sarvam-105b`) |
-| `TTS_MODEL` | Text-to-speech model (default: `bulbul:v4-flash`) |
-| `TTS_SPEAKER_MR/HI/EN` | Voices per language (API-verified, not yet auditioned) |
-| `ENABLE_STREAMING` | `true` turns on live transcription ("Record live") |
-| `ENABLE_VISION` | `true` turns on prescription photo reading |
-| `ENABLE_PII_MASKING` | `true` (default) masks names, phones and long numbers before the chat model |
+| `SARVAM_API_KEY` | Your Sarvam AI key (never printed or committed) |
+| `MOCK_MODE` | `true` runs with no network and no key |
+| `STT_MODEL`, `STT_MODE` | `saaras:v4`; mode `codemix` (chosen on 3 synthetic clips, see `docs/DECISIONS.md`) |
+| `LLM_MODEL`, `LLM_MODEL_CONVERSATION` | `sarvam-105b` (extraction), `sarvam-105b-conversations` (summary) |
+| `TTS_MODEL`, `TTS_SPEAKER_MR/HI/EN` | `bulbul:v4-flash` and one voice per language |
+| `ENABLE_STREAMING` | `true` shows "Record live" (words appear as you speak) |
+| `ENABLE_DIARIZATION` | `true` separates clinician and patient turns (Batch API, adds about 10 s) |
+| `ENABLE_KEYTERMS` | `true` passes the drug list to the speech model (no measured gain, off by default) |
+| `ENABLE_VISION` | `true` shows prescription photo reading |
+| `ENABLE_PII_MASKING` | `true` (default) masks names, phones and long numbers before the language model |
 | `PRODUCTION_MODE` | `true` ignores prescription safety rules that have no reviewer |
-| `ENABLE_DIARIZATION` | `true` runs the Batch API for clinician/patient speaker turns (adds about 10 s per clip) |
-| `ENABLE_KEYTERMS` | `true` passes the drug list to STT; measured no gain on the demo clips, so off by default |
-| `STT_MODE` | `codemix` (provisional choice, see `docs/DECISIONS.md`) |
-
----
+| `MAX_AUDIO_SECONDS`, `CORS_ORIGIN`, `PUBLIC_BASE_URL`, `SHARE_TOKEN_TTL_DAYS` | Limits, allowed origin, link base, share-link lifetime |
 
 ## Safety
 
 Red-flag and safety rules in this project are **demo-grade screening rules for decision support**. They must be reviewed by a qualified clinician before any real-world use. This tool is **not a substitute for medical judgement**.
 
-- Red flags come from deterministic rules, not AI.
-- The patient summary only restates what the clinician prescribed.
-- Human confirmation is required before generating summary audio or referral tickets.
-- All demo data is fake. No real patient information is used.
-
----
+- Red flags and safety warnings come from deterministic, human-written rules, never from the language model.
+- The patient summary only restates what the clinician prescribed; every drug and dose in it is machine-checked against the record, with a fixed template as the fallback.
+- Summary audio, referral, share link, export and reminders require a verified clinician sign-off, checked on the server.
+- All demo data is fake. Audio is processed in memory and not stored.
 
 ## Documentation
 
 | File | Purpose |
 |------|---------|
 | [`docs/SPEC.md`](docs/SPEC.md) | Full PRD + TRD (source of truth) |
-| [`docs/SARVAM_NOTES.md`](docs/SARVAM_NOTES.md) | Sarvam API reference |
-| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Technical decisions log |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Every technical choice, with measured results |
+| [`docs/SARVAM_NOTES.md`](docs/SARVAM_NOTES.md) | Sarvam API details verified from the docs and live calls |
 | [`docs/SAFETY.md`](docs/SAFETY.md) | Safety rules and review status |
-| [`docs/EVAL.md`](docs/EVAL.md) | Evaluation harness guide |
+| [`docs/EVAL.md`](docs/EVAL.md) | Evaluation guide and latest results |
 | [`docs/DEMO.md`](docs/DEMO.md) | Demo runbook |
-| [`docs/PITCH.md`](docs/PITCH.md) | Pitch slide text |
-| [`docs/SOURCES.md`](docs/SOURCES.md) | Citation tracker |
-
----
+| [`docs/PITCH.md`](docs/PITCH.md) | Pitch text (numbers cite the evaluation report) |
+| [`docs/SOURCES.md`](docs/SOURCES.md) | Where every number comes from |
 
 ## License
 
 For hackathon use only.
-
