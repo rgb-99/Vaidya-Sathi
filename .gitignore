@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+node_modules/
+dist/
+data/
+*.db
+.vite/
+.DS_Store
+eval/results/
+
+# Audio files are ignored by default, but demo audio is tracked
+*.wav
+*.webm
+!demo/audio/**
