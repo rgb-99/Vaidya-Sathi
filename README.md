@@ -64,8 +64,11 @@ uvicorn main:app --reload --port 8000
 ### 5. Sarvam Onboarding (verify your API key)
 
 ```bash
+# From the repo root
 python scripts/smoke_sarvam.py
 ```
+
+> Status (M0): every `/api` route returns canned data in mock mode. With `MOCK_MODE=false`, routes not yet implemented for real return `501`. Real STT is M1.
 
 ---
 

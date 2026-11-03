@@ -98,6 +98,13 @@ wav_bytes = base64.b64decode("".join(r.audios))
 
 ---
 
+## Verified from docs.sarvam.ai (2026-11-03, M0)
+
+- [x] Chat: `client.chat.completions(model=..., messages=[...])`, reply in `response.choices[0].message.content` (V1 API). Smoke test passed against `sarvam-105b-conversations`.
+- [x] `sarvam-105b-conversations` exists only on V1 (`chat.completions`); `sarvam-105b` is on V1 and V2.
+- [x] Chat extras: `temperature` (0-2), `max_tokens` (default 2048, reasoning tokens count), `reasoning_effort` (`low`/`medium`/`high`, `None` disables), `response_format` (`json_schema`/`json_object`/`text`). Useful for M2.
+- [x] Errors: `ApiError` (from `sarvamai.core.api_error`) has `status_code` and `body`. 429 is `TooManyRequestsError`, 403 `ForbiddenError` (bad key). 402 (credits exhausted) has no dedicated class: check `status_code`. Client timeouts raise `httpx.TimeoutException`, not `ApiError`.
+
 ## TODO
 
 - [ ] Confirm accepted audio formats and max duration for STT.
