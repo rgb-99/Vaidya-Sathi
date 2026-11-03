@@ -1,5 +1,7 @@
 // Live transcription: microphone -> 16 kHz mono WAV chunks (about 1 s each) -> /api/stream -> text segments.
 // ScriptProcessorNode is deprecated but works in every browser without a separate worklet file.
+import { API_BASE } from './api.js'
+
 function wavChunk(samples) {
   const buf = new ArrayBuffer(44 + samples.length * 2)
   const v = new DataView(buf)
@@ -12,13 +14,15 @@ function wavChunk(samples) {
   return buf
 }
 
+// ws(s):// origin of the backend: API_BASE when set, else this page's host.
+const wsBase = () => (API_BASE ? API_BASE.replace(/^http/, 'ws') : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`)
+
 export async function startLive({ language, scenario, onPartial, onDone, onError }) {
   const media = await navigator.mediaDevices.getUserMedia({ audio: true })
   const ctx = new AudioContext({ sampleRate: 16000 })
   const source = ctx.createMediaStreamSource(media)
   const node = ctx.createScriptProcessor(4096, 1, 1)
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws'
-  const ws = new WebSocket(`${proto}://${location.host}/api/stream?language=${encodeURIComponent(language || 'unknown')}&scenario=${scenario || 'S1'}`)
+  const ws = new WebSocket(`${wsBase()}/api/stream?language=${encodeURIComponent(language || 'unknown')}&scenario=${scenario || 'S1'}`)
   let pending = []
   let count = 0
   ws.onmessage = (e) => {

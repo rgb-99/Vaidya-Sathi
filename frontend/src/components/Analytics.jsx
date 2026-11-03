@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { apiUrl } from '../api.js'
 
 const show = (v, unit = '') => (v === null || v === undefined ? 'not measured' : `${v}${unit}`)
 
@@ -6,11 +7,11 @@ export default function Analytics() {
   const [data, setData] = useState(null)
   const [baseline, setBaseline] = useState('')
   const [error, setError] = useState('')
-  const load = () => fetch('/api/analytics').then((r) => r.json()).then(setData).catch(() => setError('Cannot reach the server.'))
+  const load = () => fetch(apiUrl('/api/analytics')).then((r) => r.json()).then(setData).catch(() => setError('Cannot reach the server.'))
   useEffect(() => { load() }, [])
   const save = async () => {
     setError('')
-    const res = await fetch('/api/analytics/baseline', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minutes: Number(baseline) }) })
+    const res = await fetch(apiUrl('/api/analytics/baseline'), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minutes: Number(baseline) }) })
     const body = await res.json()
     if (!res.ok) return setError(body.error)
     setData(body)

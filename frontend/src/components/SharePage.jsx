@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { apiUrl } from '../api.js'
 
 const SLOTS = [['morning', 'Morning', '🌅'], ['afternoon', 'Afternoon', '☀️'], ['night', 'Evening / Night', '🌙']]
 const wav = (b64) => `data:audio/wav;base64,${b64}`
@@ -12,7 +13,7 @@ export default function SharePage({ token }) {
     meta.name = 'robots'
     meta.content = 'noindex, nofollow'
     document.head.appendChild(meta)
-    fetch(`/api/share/${token}`).then(async (r) => (r.ok ? setData(await r.json()) : setError((await r.json()).error)))
+    fetch(apiUrl(`/api/share/${token}`)).then(async (r) => (r.ok ? setData(await r.json()) : setError((await r.json()).error)))
       .catch(() => setError('Cannot reach the server.'))
     return () => meta.remove()
   }, [token])

@@ -95,13 +95,14 @@ See [`.env.example`](.env.example). Model names live in variables so they can ch
 | `STT_MODEL`, `STT_MODE` | `saaras:v4`; mode `codemix` (chosen on 3 synthetic clips, see `docs/DECISIONS.md`) |
 | `LLM_MODEL`, `LLM_MODEL_CONVERSATION` | `sarvam-105b` (extraction), `sarvam-105b-conversations` (summary) |
 | `TTS_MODEL`, `TTS_SPEAKER_MR/HI/EN` | `bulbul:v4-flash` and one voice per language |
-| `ENABLE_STREAMING` | `true` shows "Record live" (words appear as you speak) |
+| `ENABLE_STREAMING` | `true` shows "Live (words as you speak)" under the microphone |
 | `ENABLE_DIARIZATION` | `true` separates clinician and patient turns (Batch API, adds about 10 s) |
 | `ENABLE_KEYTERMS` | `true` passes the drug list to the speech model (no measured gain, off by default) |
 | `ENABLE_VISION` | `true` shows prescription photo reading |
 | `ENABLE_PII_MASKING` | `true` (default) masks names, phones and long numbers before the language model |
 | `PRODUCTION_MODE` | `true` ignores prescription safety rules that have no reviewer |
 | `MAX_AUDIO_SECONDS`, `CORS_ORIGIN`, `PUBLIC_BASE_URL`, `SHARE_TOKEN_TTL_DAYS` | Limits, allowed origin, link base, share-link lifetime |
+| `VITE_API_BASE` (frontend, build time) | Backend origin when it is hosted apart from the frontend; empty in local dev (the Vite proxy is used) |
 
 ## Safety
 
@@ -122,6 +123,7 @@ Red-flag and safety rules in this project are **demo-grade screening rules for d
 | [`docs/SAFETY.md`](docs/SAFETY.md) | Safety rules and review status |
 | [`docs/EVAL.md`](docs/EVAL.md) | Evaluation guide and latest results |
 | [`docs/DEMO.md`](docs/DEMO.md) | Demo runbook |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Hosting: frontend on Vercel, backend on Render (Docker) |
 | [`docs/PITCH.md`](docs/PITCH.md) | Pitch text (numbers cite the evaluation report) |
 | [`docs/SOURCES.md`](docs/SOURCES.md) | Where every number comes from |
 

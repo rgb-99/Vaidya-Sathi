@@ -1,8 +1,12 @@
 // Calls the backend using the contract in SPEC TRD section 6.
+// VITE_API_BASE is the backend origin when it is hosted apart from the frontend (empty: same origin, the Vite proxy in dev).
+export const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '')
+export const apiUrl = (path) => API_BASE + path
+
 async function request(path, options) {
   let res
   try {
-    res = await fetch('/api' + path, options)
+    res = await fetch(apiUrl('/api' + path), options)
   } catch {
     throw new Error('Cannot reach the server. Check that the backend is running and your network is up.')
   }
@@ -34,7 +38,7 @@ export const signoff = (record, clinician_name, started_at = '', demo = false) =
 export const getRecords = () => request('/records')
 export const getTickets = () => request('/tickets')
 export const getCardHtml = async (record) => {
-  const res = await fetch('/api/card', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) })
+  const res = await fetch(apiUrl('/api/card'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) })
   if (!res.ok) throw new Error('Could not build the printable card.')
   return res.text()
 }

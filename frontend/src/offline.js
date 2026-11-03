@@ -1,5 +1,7 @@
 // Offline-first capture: recordings made without a network wait in IndexedDB (audio only until synced, then the
 // transcript is kept and the audio is dropped). Every item has a client-generated id so the server can ignore repeats.
+import { apiUrl } from './api.js'
+
 const DB = 'vs-offline'
 const STORE = 'queue'
 
@@ -48,7 +50,7 @@ export async function syncAll() {
         const form = new FormData()
         form.append('client_id', item.id)
         form.append('audio', item.blob, item.filename)
-        const res = await fetch('/api/sync', { method: 'POST', body: form })
+        const res = await fetch(apiUrl('/api/sync'), { method: 'POST', body: form })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || `Sync failed (${res.status})`)
         await update(item.id, { status: 'done', result: data, blob: null })

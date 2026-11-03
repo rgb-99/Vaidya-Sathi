@@ -19,11 +19,11 @@ export default function PrescriptionPhoto({ record }) {
     try {
       const form = new FormData()
       form.append('image', file, file.name)
-      const res = await fetch('/api/prescription-photo', { method: 'POST', body: form })
+      const res = await fetch(api.apiUrl('/api/prescription-photo'), { method: 'POST', body: form })
       const start = await res.json()
       if (!res.ok) throw new Error(start.error)
       for (let i = 0; i < 60; i++) {
-        const job = await (await fetch(`/api/prescription-photo/${start.job_id}`)).json()
+        const job = await (await fetch(api.apiUrl(`/api/prescription-photo/${start.job_id}`))).json()
         if (job.status === 'completed') {
           setItems(job.items)
           setLines((await api.reconcile(record, job.items)).lines)

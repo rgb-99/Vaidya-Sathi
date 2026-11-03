@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { apiUrl } from '../api.js'
 
 const HEADLINE = [
   ['overall_f1', 'Overall field F1 (%)'], ['drug_exact', 'Drug name exact match (%)'], ['dose_exact', 'Dose exact match (%)'],
@@ -11,7 +12,7 @@ export default function EvalPage() {
   const [report, setReport] = useState(null)
   const [error, setError] = useState('')
   useEffect(() => {
-    fetch('/api/eval/latest').then(async (r) => (r.ok ? setReport(await r.json()) : setError((await r.json()).error))).catch(() => setError('Cannot reach the server.'))
+    fetch(apiUrl('/api/eval/latest')).then(async (r) => (r.ok ? setReport(await r.json()) : setError((await r.json()).error))).catch(() => setError('Cannot reach the server.'))
   }, [])
   if (error) return <main className="w-full p-3"><p className="text-red-700 dark:text-red-300 dark:text-red-300" role="alert">{error}</p></main>
   if (!report) return <main className="w-full p-3 text-muted">Loading…</main>

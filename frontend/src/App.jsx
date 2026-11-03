@@ -165,7 +165,7 @@ export default function App() {
     if (!s) return
     if (!s.audio_url) return setTranscript(s.transcript)
     await run('transcribe', async () => {
-      const clip = await fetch(s.audio_url)
+      const clip = await fetch(api.apiUrl(s.audio_url))
       if (!clip.ok) throw new Error('Could not load the demo clip.')
       applyTranscript(await api.transcribe(await clip.blob(), `${id}.wav`))
     })
@@ -394,8 +394,8 @@ export default function App() {
                   <button disabled={busy === 'card'} onClick={printCard} className="tile">
                     {busy === 'card' ? <Spinner className="h-7 w-7" /> : <Icon name="printer" className="h-7 w-7" />} Print card
                   </button>
-                  <a className="tile" href={`/api/schedule.ics?record_id=${recordId}`}><Icon name="calendar" className="h-7 w-7" /> Reminders</a>
-                  <a className="tile" href={`/api/export/${recordId}.json`} target="_blank" rel="noreferrer"><Icon name="download" className="h-7 w-7" /> Export (JSON)</a>
+                  <a className="tile" href={api.apiUrl(`/api/schedule.ics?record_id=${recordId}`)}><Icon name="calendar" className="h-7 w-7" /> Reminders</a>
+                  <a className="tile" href={api.apiUrl(`/api/export/${recordId}.json`)} target="_blank" rel="noreferrer"><Icon name="download" className="h-7 w-7" /> Export (JSON)</a>
                 </div>
                 <label className="flex items-center gap-2 text-sm text-muted"><input type="checkbox" className="h-4 w-4" checked={includeDx} onChange={(e) => setIncludeDx(e.target.checked)} /> Show diagnosis on the phone page</label>
                 {shareInfo && (

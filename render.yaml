@@ -1,0 +1,39 @@
+# Render blueprint for the backend. The frontend is on Vercel (see docs/DEPLOY.md).
+services:
+  - type: web
+    name: vaidya-saathi-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter            # a persistent disk needs a paid instance; without it records vanish on every deploy
+    healthCheckPath: /api/health
+    disk:
+      name: data
+      mountPath: /app/data   # SQLite database and the sign-off key
+      sizeGB: 1
+    envVars:
+      - key: SARVAM_API_KEY
+        sync: false          # secret: entered in the Render dashboard, never committed
+      - key: CORS_ORIGIN
+        sync: false          # the Vercel URL, e.g. https://vaidya-saathi.vercel.app
+      - key: PUBLIC_BASE_URL
+        sync: false          # same Vercel URL (patient share links point there)
+      - key: MOCK_MODE
+        value: "false"
+      - key: STT_MODEL
+        value: saaras:v4
+      - key: STT_MODE
+        value: codemix
+      - key: LLM_MODEL
+        value: sarvam-105b
+      - key: LLM_MODEL_CONVERSATION
+        value: sarvam-105b-conversations
+      - key: TTS_MODEL
+        value: bulbul:v4-flash
+      - key: TTS_SPEAKER_MR
+        sync: false          # copy the voice names from your local .env
+      - key: TTS_SPEAKER_HI
+        sync: false
+      - key: TTS_SPEAKER_EN
+        sync: false
+      - key: ENABLE_PII_MASKING
+        value: "true"
