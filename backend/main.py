@@ -2,15 +2,17 @@ import asyncio
 import base64
 import json
 import logging
+import re
 import time
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
@@ -96,6 +98,21 @@ def health():
 async def transcribe(audio: UploadFile = File(...)):
     with timed('transcribe'):
         return await run_in_threadpool(voice.transcribe, await audio.read(), audio.filename)
+
+
+@app.post('/api/sync')
+async def sync(client_id: str = Form(...), audio: UploadFile = File(...)):
+    """Transcribe a recording that was queued offline. Idempotent: the client-generated id means a retried or
+    repeated upload returns the stored result instead of transcribing (and paying for) the audio again."""
+    if not re.fullmatch(r'[\w-]{8,64}', client_id):
+        raise HTTPException(400, 'Invalid client id.')
+    stored = db.get_sync(client_id)
+    if stored is not None:
+        return {**stored, 'duplicate': True}
+    with timed('sync'):
+        result = jsonable_encoder(await run_in_threadpool(voice.transcribe, await audio.read(), audio.filename))
+    db.save_sync(client_id, result)
+    return {**result, 'duplicate': False}
 
 
 @app.post('/api/structure')

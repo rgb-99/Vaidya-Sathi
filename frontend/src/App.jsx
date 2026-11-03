@@ -7,6 +7,8 @@ import RedFlagBanner from './components/RedFlagBanner.jsx'
 import DiarizedTranscript from './components/DiarizedTranscript.jsx'
 import EvalPage from './components/EvalPage.jsx'
 import History from './components/History.jsx'
+import OfflineQueue from './components/OfflineQueue.jsx'
+import { enqueue } from './offline.js'
 import PrescriptionPhoto from './components/PrescriptionPhoto.jsx'
 import SafetyWarnings from './components/SafetyWarnings.jsx'
 import SaidInferred from './components/SaidInferred.jsx'
@@ -98,10 +100,15 @@ export default function App() {
     })
   }
 
-  const onAudio = (blob, filename) =>
-    run('transcribe', async () => {
+  const onAudio = (blob, filename) => {
+    if (!navigator.onLine) {   // no network: keep the recording on the device and sync later
+      enqueue(blob, filename).then(() => setError('You are offline. The recording is saved and will be transcribed when you are back online.')).catch((e) => setError(e.message))
+      return
+    }
+    return run('transcribe', async () => {
       applyTranscript(await api.transcribe(blob, filename))
     })
+  }
 
   const extract = () =>
     run('structure', async () => {
@@ -185,6 +192,7 @@ export default function App() {
             <textarea className="input h-56" placeholder="Transcript appears here"
               value={transcript} onChange={(e) => { setTranscript(e.target.value); setUtterances([]) }} />
           </div>
+          <OfflineQueue onUse={applyTranscript} />
           <DiarizedTranscript utterances={utterances} onSwap={() => setUtterances((us) => us.map((u) => ({ ...u, speaker: u.speaker === 'clinician' ? 'patient' : u.speaker === 'patient' ? 'clinician' : 'unknown' })))} />
           <button disabled={!transcript || busy === 'structure'} onClick={extract} className="btn-ink w-full">
             {busy === 'structure' ? 'Extracting…' : 'Extract record'}

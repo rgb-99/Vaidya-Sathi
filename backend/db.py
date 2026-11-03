@@ -15,6 +15,7 @@ def _conn():
     c.executescript(
         'CREATE TABLE IF NOT EXISTS records(id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT, json TEXT);'
         'CREATE TABLE IF NOT EXISTS tickets(id TEXT PRIMARY KEY, created_at TEXT, record_id INTEGER, payload_json TEXT);'
+        'CREATE TABLE IF NOT EXISTS sync_results(client_id TEXT PRIMARY KEY, created_at TEXT, result_json TEXT);'
         'CREATE TABLE IF NOT EXISTS shares(token TEXT PRIMARY KEY, created_at TEXT, expires_at TEXT, payload_json TEXT);')
     return c
 
@@ -65,3 +66,16 @@ def save_share(token, created_at, expires_at, payload_json):
 def get_share(token):
     with _conn() as c:
         return c.execute('SELECT * FROM shares WHERE token = ?', (token,)).fetchone()
+
+
+def get_sync(client_id):
+    with _conn() as c:
+        row = c.execute('SELECT result_json FROM sync_results WHERE client_id = ?', (client_id,)).fetchone()
+    return json.loads(row['result_json']) if row else None
+
+
+def save_sync(client_id, result):
+    """Idempotent: the first result for an id wins. Only the transcript result is stored, never the audio."""
+    with _conn() as c:
+        c.execute('INSERT OR IGNORE INTO sync_results(client_id, created_at, result_json) VALUES (?, ?, ?)',
+                  (client_id, _now(), json.dumps(result, ensure_ascii=False)))
