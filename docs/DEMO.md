@@ -9,6 +9,8 @@
 - [ ] `ffmpeg` and `ffprobe` installed (real mode only). `.env` has `SARVAM_API_KEY` and `MOCK_MODE=false`.
 - [ ] Mic works: press **Record**, speak 5 seconds, press **Stop**; the transcript appears.
 - [ ] Demo picker tested with S1, S2 and S3 in real mode and again with `MOCK_MODE=true`.
+- [ ] Sign-off, summary audio, referral and share link tested once on this machine.
+- [ ] Not verified by the author, so test yourself: microphone recording, live transcription, offline queue (turn Wi-Fi off, record, turn it on), printing, voices (listen to all three languages).
 - [ ] Language selector tested (Marathi, Hindi, English) and the voices auditioned (`python scripts/test_voice.py <lang> <speaker> "text"`).
 - [ ] `demo/audio/S1.wav` to `S3.wav` are synthetic stand-ins (see `demo/README.md`); replace them with fake-patient recordings of the same names if you have them.
 
@@ -27,7 +29,13 @@
 
 **2:30 Close (30 s).** "Decision support, not decision making. Red flags are fixed rules, the doctor always reviews, built on Sarvam voice and language models."
 
-Also built: **History** tab, **Print medicine card**. Not built yet (do not demo): share page, prescription photos, streaming, offline capture.
+Optional extras, in the order they appear after sign-off (only demo what you have rehearsed):
+- **Create patient share link** shows a QR code and link; open it on a phone (same network and `PUBLIC_BASE_URL` set to the laptop's address) to show the large-print schedule with the audio.
+- **Download reminder calendar (.ics)**, **Print medicine card**, **Export (FHIR-inspired JSON)**.
+- Tabs: **History** (signed records and tickets), **Analytics** (enter your typing baseline once; shows measured time only, demo runs excluded), **Eval** (latest evaluation report).
+- With `ENABLE_VISION=true`: **Upload photo** of a sample prescription (`demo/prescriptions/rx1.png`) to see what changed against today's record.
+- With `ENABLE_STREAMING=true`: **Record live** shows words as you speak.
+- With `ENABLE_DIARIZATION=true`: coloured clinician and patient turns with **Swap roles** (adds about 10 s).
 
 ## Fallbacks
 
