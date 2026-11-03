@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: v('bg'), surface: v('surface'), ink: v('ink'), muted: v('muted'), line: v('line'), linkc: v('linkc'),
+        bg: v('bg'), surface: v('surface'), ink: v('ink'), muted: v('muted'), line: v('line'), linkc: v('linkc'), onaccent: v('on-accent'),
         accent: { DEFAULT: v('accent'), dark: v('accent-dark'), soft: v('accent-soft') },
       },
       fontFamily: {

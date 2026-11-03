@@ -96,7 +96,7 @@ export default function Recorder({ scenarioId, onAudio, busy, streaming, languag
       <button
         disabled={busy}
         onClick={recording ? stop : start}
-        className={`w-full rounded-full py-4 text-lg font-medium text-white transition disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${recording ? 'bg-red-600 animate-pulse' : 'bg-accent hover:bg-accent-dark'}`}
+        className={`w-full rounded-full py-4 text-lg font-medium transition disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${recording ? 'bg-red-600 text-white animate-pulse' : 'bg-accent text-onaccent hover:bg-accent-dark'}`}
       >
         {busy ? 'Transcribing…' : recording ? `Stop  ${fmt(seconds)}` : 'Record'}
       </button>
