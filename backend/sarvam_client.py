@@ -1,4 +1,5 @@
 """The ONLY file that imports sarvamai. All wrappers are no-network in MOCK_MODE."""
+import asyncio
 import base64
 import json
 import tempfile
@@ -152,3 +153,38 @@ def doc_status(job_id):
 def doc_results(job_id):
     r = _call(lambda: _get_client().doc_ai.get_results(job_id))
     return {'result': r.result or {}, 'annotations': r.annotations or {}}
+
+
+# ---- Real-time streaming STT (WebSocket). WAV chunks in, transcript segments out.
+async def stream_relay(next_audio, emit, language_code, flush_wait_s=8):
+    """next_audio(): awaitable returning a WAV chunk (bytes) or None when the speaker stops.
+    emit(text): awaitable called for every transcript segment Sarvam returns."""
+    from sarvamai import AsyncSarvamAI
+    from sarvamai.core.api_error import ApiError
+    if not config.SARVAM_API_KEY:
+        raise SarvamError('SARVAM_API_KEY is not set in .env.', 500)
+    client = AsyncSarvamAI(api_subscription_key=config.SARVAM_API_KEY)
+    try:
+        async with client.speech_to_text_streaming.connect(
+                model=config.STT_MODEL, mode=config.STT_MODE, language_code=language_code,
+                sample_rate=16000, flush_signal=True) as ws:
+            async def pump_in():
+                while (chunk := await next_audio()) is not None:
+                    await ws.transcribe(audio=base64.b64encode(chunk).decode(), encoding='audio/wav', sample_rate=16000)
+                await ws.flush()   # process whatever is buffered without waiting for silence
+
+            async def pump_out():
+                async for msg in ws:
+                    if msg.type == 'data' and getattr(msg.data, 'transcript', ''):
+                        await emit(msg.data.transcript)
+
+            reader = asyncio.create_task(pump_out())
+            try:
+                await pump_in()
+                await asyncio.wait_for(asyncio.shield(reader), timeout=flush_wait_s)   # trailing segments
+            except asyncio.TimeoutError:
+                pass
+            finally:
+                reader.cancel()
+    except ApiError as e:
+        raise SarvamError(_STATUS_MESSAGES.get(e.status_code, f'Sarvam streaming error {e.status_code}.'), 502)

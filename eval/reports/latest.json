@@ -1,18 +1,18 @@
 {
-  "run_id": "20261103T143616Z",
-  "mode": "text",
+  "run_id": "20261103T144437Z",
+  "mode": "audio",
   "scenario_count": 32,
-  "synthetic": "All scenarios are synthetic scripts; no audio or STT in this run (text mode).",
+  "synthetic": "All scenarios are synthetic scripts; audio is Bulbul speech, not real clinic audio.",
   "config": {
     "llm_model": "sarvam-105b",
     "stt_model": "saaras:v4",
     "stt_mode": "codemix",
     "prompt_version": "v3",
-    "diarization": false,
+    "diarization": true,
     "keyterms": false
   },
   "metrics": {
-    "overall_f1": 98.8,
+    "overall_f1": 91.5,
     "per_field": {
       "complaints": {
         "precision": 100.0,
@@ -27,28 +27,28 @@
         "f1": 100.0
       },
       "drug": {
-        "precision": 100.0,
-        "recall": 100.0,
+        "precision": 96.8,
+        "recall": 96.8,
         "expected": 31,
-        "f1": 100.0
+        "f1": 96.8
       },
       "dose": {
-        "precision": 100.0,
-        "recall": 100.0,
+        "precision": 58.1,
+        "recall": 58.1,
         "expected": 31,
-        "f1": 100.0
+        "f1": 58.1
       },
       "timing": {
-        "precision": 90.3,
-        "recall": 90.3,
+        "precision": 80.6,
+        "recall": 80.6,
         "expected": 31,
-        "f1": 90.3
+        "f1": 80.6
       },
       "duration": {
-        "precision": 100.0,
-        "recall": 100.0,
+        "precision": 96.8,
+        "recall": 96.8,
         "expected": 31,
-        "f1": 100.0
+        "f1": 96.8
       },
       "advice": {
         "precision": 100.0,
@@ -63,14 +63,17 @@
         "f1": 100.0
       }
     },
-    "drug_exact": 100.0,
-    "dose_exact": 100.0,
+    "drug_exact": 96.8,
+    "dose_exact": 58.1,
     "hallucinations": 0,
     "hallucination_items": [],
     "redflag_precision": 100.0,
     "redflag_recall": 100.0,
-    "speaker_accuracy": null,
-    "keyterms_drug_names": null,
+    "speaker_accuracy": 88.9,
+    "keyterms_drug_names": {
+      "without": "28/31",
+      "with": "29/31"
+    },
     "extraction_failures": 0,
     "latency_s": {
       "redflags": {
@@ -79,13 +82,112 @@
         "n": 32
       },
       "structure": {
-        "p50": 4.38,
-        "p95": 6.85,
+        "p50": 3.29,
+        "p95": 6.61,
+        "n": 32
+      },
+      "stt": {
+        "p50": 10.78,
+        "p95": 28.54,
         "n": 32
       }
     }
   },
   "scenarios": [
+    {
+      "id": "E06",
+      "missed": [
+        [
+          "drug",
+          "",
+          "Glimepiride"
+        ],
+        [
+          "dose",
+          "glimepiride",
+          "1mg"
+        ],
+        [
+          "timing",
+          "glimepiride",
+          "morning"
+        ],
+        [
+          "duration",
+          "glimepiride",
+          "30 days"
+        ]
+      ],
+      "extra": [
+        [
+          "drug",
+          "",
+          "Glycopyrrolate"
+        ],
+        [
+          "dose",
+          "glycopyrrolate",
+          "1 mg"
+        ],
+        [
+          "timing",
+          "glycopyrrolate",
+          "morning"
+        ],
+        [
+          "duration",
+          "glycopyrrolate",
+          "30 days"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 8
+    },
+    {
+      "id": "N02",
+      "missed": [
+        [
+          "dose",
+          "metformin",
+          "500mg"
+        ],
+        [
+          "timing",
+          "metformin",
+          "morning and evening, after food"
+        ],
+        [
+          "dose",
+          "glimepiride",
+          "1mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "metformin",
+          "500 milligram"
+        ],
+        [
+          "timing",
+          "metformin",
+          "after breakfast, after dinner"
+        ],
+        [
+          "dose",
+          "glimepiride",
+          "1 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 6
+    },
     {
       "id": "E02",
       "missed": [
@@ -109,7 +211,7 @@
         [
           "timing",
           "paracetamol",
-          "after breakfast, after dinner"
+          "after breakfast and after dinner"
         ]
       ],
       "hallucinations": [],
@@ -117,6 +219,224 @@
       "flags_predicted": [],
       "extraction_failed": false,
       "issues": 4
+    },
+    {
+      "id": "E12",
+      "missed": [
+        [
+          "dose",
+          "metformin",
+          "500mg"
+        ],
+        [
+          "dose",
+          "atorvastatin",
+          "10mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "metformin",
+          "500 milligram"
+        ],
+        [
+          "dose",
+          "atorvastatin",
+          "10 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 4
+    },
+    {
+      "id": "F03",
+      "missed": [
+        [
+          "dose",
+          "metformin",
+          "500mg"
+        ],
+        [
+          "dose",
+          "atorvastatin",
+          "10mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "metformin",
+          "500 milligram"
+        ],
+        [
+          "dose",
+          "atorvastatin",
+          "10 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 4
+    },
+    {
+      "id": "E04",
+      "missed": [
+        [
+          "dose",
+          "metformin",
+          "500mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "metformin",
+          "500 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 2
+    },
+    {
+      "id": "E07",
+      "missed": [
+        [
+          "dose",
+          "telmisartan",
+          "40mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "telmisartan",
+          "40 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 2
+    },
+    {
+      "id": "E08",
+      "missed": [
+        [
+          "timing",
+          "paracetamol",
+          "morning and evening, after food"
+        ]
+      ],
+      "extra": [
+        [
+          "timing",
+          "paracetamol",
+          "after meals"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 2
+    },
+    {
+      "id": "E11",
+      "missed": [
+        [
+          "dose",
+          "amlodipine",
+          "5mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "amlodipine",
+          "5 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 2
+    },
+    {
+      "id": "E14",
+      "missed": [
+        [
+          "dose",
+          "losartan",
+          "50mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "losartan",
+          "50 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 2
+    },
+    {
+      "id": "N01",
+      "missed": [
+        [
+          "dose",
+          "metoprolol",
+          "50mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "metoprolol",
+          "50 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 2
+    },
+    {
+      "id": "N03",
+      "missed": [
+        [
+          "dose",
+          "amlodipine",
+          "5mg"
+        ]
+      ],
+      "extra": [
+        [
+          "dose",
+          "amlodipine",
+          "5 milligram"
+        ]
+      ],
+      "hallucinations": [],
+      "flags_expected": [],
+      "flags_predicted": [],
+      "extraction_failed": false,
+      "issues": 2
     },
     {
       "id": "F02",
@@ -161,47 +481,7 @@
       "issues": 0
     },
     {
-      "id": "E04",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
       "id": "E05",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "E06",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "E07",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "E08",
       "missed": [],
       "extra": [],
       "hallucinations": [],
@@ -231,37 +511,7 @@
       "issues": 0
     },
     {
-      "id": "E11",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "E12",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
       "id": "E13",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "E14",
       "missed": [],
       "extra": [],
       "hallucinations": [],
@@ -413,36 +663,6 @@
       "issues": 0
     },
     {
-      "id": "N01",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "N02",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "N03",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
       "id": "N04",
       "missed": [],
       "extra": [],
@@ -460,16 +680,6 @@
     },
     {
       "id": "F01",
-      "missed": [],
-      "extra": [],
-      "hallucinations": [],
-      "flags_expected": [],
-      "flags_predicted": [],
-      "extraction_failed": false,
-      "issues": 0
-    },
-    {
-      "id": "F03",
       "missed": [],
       "extra": [],
       "hallucinations": [],
@@ -498,16 +708,16 @@
     "failures": []
   },
   "previous": {
-    "run_id": "20261103T141228Z",
+    "run_id": "20261103T143616Z",
     "mode": "text",
     "metrics": {
-      "overall_f1": 95.6,
+      "overall_f1": 98.8,
       "per_field": {
         "complaints": {
-          "precision": 97.3,
-          "recall": 97.3,
+          "precision": 100.0,
+          "recall": 100.0,
           "expected": 37,
-          "f1": 97.3
+          "f1": 100.0
         },
         "vitals": {
           "precision": 100.0,
@@ -516,40 +726,40 @@
           "f1": 100.0
         },
         "drug": {
-          "precision": 96.9,
+          "precision": 100.0,
           "recall": 100.0,
           "expected": 31,
-          "f1": 98.4
+          "f1": 100.0
         },
         "dose": {
-          "precision": 96.9,
+          "precision": 100.0,
           "recall": 100.0,
           "expected": 31,
-          "f1": 98.4
+          "f1": 100.0
         },
         "timing": {
-          "precision": 87.5,
+          "precision": 90.3,
           "recall": 90.3,
           "expected": 31,
-          "f1": 88.9
+          "f1": 90.3
         },
         "duration": {
-          "precision": 90.6,
-          "recall": 93.5,
+          "precision": 100.0,
+          "recall": 100.0,
           "expected": 31,
-          "f1": 92.1
+          "f1": 100.0
         },
         "advice": {
-          "precision": 93.1,
-          "recall": 93.1,
+          "precision": 100.0,
+          "recall": 100.0,
           "expected": 29,
-          "f1": 93.1
+          "f1": 100.0
         },
         "follow_up": {
-          "precision": 95.0,
-          "recall": 95.0,
+          "precision": 100.0,
+          "recall": 100.0,
           "expected": 20,
-          "f1": 95.0
+          "f1": 100.0
         }
       },
       "drug_exact": 100.0,
@@ -568,8 +778,8 @@
           "n": 32
         },
         "structure": {
-          "p50": 4.21,
-          "p95": 7.59,
+          "p50": 4.38,
+          "p95": 6.85,
           "n": 32
         }
       }

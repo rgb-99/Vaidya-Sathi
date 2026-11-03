@@ -19,30 +19,30 @@
 
 ### Extraction Accuracy
 
-**Value:** overall field F1 95.6% over 32 synthetic scenarios, text mode (no STT), run 20261103T141228Z
+**Value:** overall field F1 91.5% over 32 synthetic scenarios, audio mode (synthetic speech through STT and diarization), run 20261103T144437Z; text mode 98.8% (scripts only)
 **Source:** `eval/reports/latest.json`, `metrics.overall_f1` and `metrics.per_field`
-**Verified:** Yes for text mode only; audio-mode numbers pending
+**Verified:** Yes (synthetic audio only; not real clinic recordings)
 **Used in:** Pitch slide 6
 
 ### Zero Hallucinated Drugs
 
-**Value:** 0 hallucinations (unverified drug, dose, vital, diagnosis or patient detail) across 32 synthetic scenarios, text mode, run 20261103T141228Z
+**Value:** 0 hallucinations (unverified drug, dose, vital, diagnosis or patient detail) across 32 synthetic scenarios, audio mode, run 20261103T144437Z. Note: an STT mishearing (Glimepiride heard as Glycopyrrolate in E06) is not counted as a hallucination because the word is in the transcript
 **Source:** `eval/reports/latest.json`, `metrics.hallucinations`
-**Verified:** Yes for text mode only
+**Verified:** Yes
 **Used in:** Pitch slide 6
 
 ### Red-Flag Precision and Recall
 
-**Value:** precision 100.0%, recall 100.0% on 32 synthetic scenarios (expected flags hand-written from the rule table), run 20261103T141228Z
+**Value:** precision 100.0%, recall 100.0% on 32 synthetic scenarios, audio mode (expected flags hand-written from the rule table), run 20261103T144437Z
 **Source:** `eval/reports/latest.json`, `metrics.redflag_precision`, `metrics.redflag_recall`
-**Verified:** Yes for text mode; the rules are demo-grade and clinician review is pending
+**Verified:** Yes; the rules themselves are demo-grade and clinician review is pending
 **Used in:** Pitch slide 6
 
 ### End-to-End Latency
 
-**Value:** not yet measured end to end. Text mode measured only extraction (p50 4.21 s, p95 7.59 s); STT, summary and speech stages are not in the report yet
+**Value:** audio mode, run 20261103T144437Z: STT p50 10.78 s / p95 28.54 s (diarized batch job, 4 jobs in parallel); structure() p50 3.29 s / p95 6.61 s. Summary and speech stages are not in the report; end-to-end p95 is above the 20 s target
 **Source:** `eval/reports/latest.json`, `metrics.latency_s`
-**Verified:** No — run audio mode
+**Verified:** Yes for the stages listed
 **Used in:** Pitch slide 6
 
 ### Minutes of Typing Saved

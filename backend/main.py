@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 import logging
@@ -7,7 +8,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, Response
@@ -194,7 +195,7 @@ def require_vision():
 
 @app.get('/api/features')
 def features():
-    return {'vision': config.ENABLE_VISION, 'diarization': config.ENABLE_DIARIZATION}
+    return {'vision': config.ENABLE_VISION, 'diarization': config.ENABLE_DIARIZATION, 'streaming': config.ENABLE_STREAMING}
 
 
 @app.post('/api/prescription-photo')
@@ -218,6 +219,47 @@ def prescription_photo_result(job_id: str):
 @app.post('/api/reconcile')
 def reconcile(req: ReconcileRequest):
     return {'lines': vision.reconcile(req.previous, req.record)}
+
+
+@app.websocket('/api/stream')
+async def stream(ws: WebSocket, language: str = 'unknown', scenario: str = 'S1'):
+    """Relay microphone audio to Sarvam real-time STT. The browser sends 16 kHz mono WAV chunks (binary) and the text
+    'end' when it stops; it receives {type: 'partial', text} per segment, then {type: 'done', transcript}.
+    Gated by ENABLE_STREAMING; the batch path stays the default and the fallback. Audio is never stored."""
+    await ws.accept()
+    if not config.ENABLE_STREAMING:
+        await ws.send_json({'type': 'error', 'error': 'Live streaming is turned off (ENABLE_STREAMING=false). Use the normal recorder.'})
+        return await ws.close()
+    segments = []
+
+    async def next_audio():
+        msg = await ws.receive()
+        if msg.get('type') == 'websocket.disconnect' or msg.get('text') == 'end':
+            return None
+        return msg.get('bytes') or b''
+
+    async def emit(text):
+        segments.append(text)
+        await ws.send_json({'type': 'partial', 'text': text})
+
+    try:
+        if config.MOCK_MODE:   # canned words, one segment per chunk received, no network
+            words = mock_data.SCENARIOS.get(scenario, mock_data.SCENARIOS['S1'])['transcript'].split()
+            per = 4
+            for i in range(0, len(words), per):
+                if await next_audio() is None:
+                    break
+                await emit(' '.join(words[i:i + per]))
+            while await next_audio() is not None:
+                pass
+        else:
+            await sarvam_client.stream_relay(next_audio, emit, language)
+        await ws.send_json({'type': 'done', 'transcript': ' '.join(segments)})
+    except sarvam_client.SarvamError as e:
+        await ws.send_json({'type': 'error', 'error': str(e)})
+    except WebSocketDisconnect:
+        return
+    await ws.close()
 
 
 @app.post('/api/safety')

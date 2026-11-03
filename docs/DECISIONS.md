@@ -173,3 +173,14 @@ Per clip WER: S1 transcribe 0.45 vs codemix 0.18; S2 0.38 vs 0.45 (transcribe be
 **Reconciliation (F26):** `POST /api/reconcile {record, previous}` is deterministic Python: drugs matched through the formulary; dose compared with spaces ignored; statuses new, stopped, dose_changed, unchanged, each with the photo's read confidence (min over fields; below 70% is flagged in the UI). The clinician can mark each line accepted or rejected, which only records the review: nothing is merged into the prescription.
 **Samples:** `demo/prescriptions/rx1-rx3.png`, synthetic (see its README).
 **Tests:** 203 pass (polling, timeout, failed job, malformed payloads, file validation, gating, mock, every diff case).
+
+### 2026-11-03 — M9 audio-mode results and proposed fixes (not applied)
+
+Run `20261103T144437Z`, audio mode, diarization on, 32 synthetic scenarios (see `docs/EVAL.md`): overall F1 91.5, drug 96.8, dose 58.1, red flags 100/100, hallucinations 0, speaker accuracy 88.9, STT p50 10.8 s / p95 28.5 s. Text mode was 98.8, so STT cost about 7 points.
+
+| # | Finding | Proposed change | Expected effect | Risk |
+| --- | --- | --- | --- | --- |
+| 1 | STT writes "500 milligram" / "1 milligram"; extraction keeps it, scores as a dose miss, and `check_summary` only recognizes mg, mcg, g, ml so those doses go unchecked | Deterministic dose normalizer after extraction (milligram(s) -> mg, microgram(s) -> mcg, gram -> g, drop the space between number and unit); extend the summary post-check to the same units | Dose exact match 58% -> about 100% and the summary check covers every dose | "Exactly as spoken" in the SPEC is relaxed to a canonical unit form; needs your yes |
+| 2 | STT misheard a drug (Glimepiride -> Glycopyrrolate, E06); nothing flags it | Flag any prescribed drug that is not in the formulary list as "not in the demo formulary, verify the name" (warning only) | Wrong drugs become visible to the clinician | False alarms for real drugs outside the 40-name demo list |
+| 3 | STT p95 28.5 s with 4 parallel batch jobs | Re-measure with workers=1; use diarization only when asked | Honest single-consultation latency | None |
+| 4 | Key terms: 29 vs 28 of 31 | None; keep off by default | | |
