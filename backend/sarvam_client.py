@@ -55,14 +55,15 @@ def _call(fn):
             raise SarvamError(msg, 502)
 
 
-def chat(model, system, user):
+def chat(model, system, user, temperature=None, max_tokens=None):
     if config.MOCK_MODE:
         return '{}'
     messages = []
     if system:
         messages.append({'role': 'system', 'content': system})
     messages.append({'role': 'user', 'content': user})
-    r = _call(lambda: _get_client().chat.completions(model=model, messages=messages))
+    extra = {k: v for k, v in (('temperature', temperature), ('max_tokens', max_tokens)) if v is not None}
+    r = _call(lambda: _get_client().chat.completions(model=model, messages=messages, **extra))
     return r.choices[0].message.content
 
 

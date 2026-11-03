@@ -13,10 +13,10 @@ SCENARIOS = {
             'Ani Amlodipine 5mg raatri jevnanantar. Don aathvadyanni parat ya.'
         ),
         'record': {
-            'patient': {'name': 'Ramesh', 'age': '58', 'sex': 'male'},
+            'patient': {'name': '', 'age': '', 'sex': ''},
             'chief_complaints': ['headache'],
             'vitals': {'bp': '150/95'},
-            'diagnosis': 'High blood pressure',
+            'diagnosis': '',
             'prescription': [
                 {'drug': 'Metoprolol', 'dose': '50mg', 'frequency': 'once daily',
                  'timing': 'morning', 'duration': '30 days'},
@@ -61,10 +61,10 @@ SCENARIOS = {
             'Meetha band kijiye aur roz tehliye. Do hafte baad dobara aaiye.'
         ),
         'record': {
-            'patient': {'name': 'Sunita', 'age': '52', 'sex': 'female'},
+            'patient': {'name': '', 'age': '', 'sex': ''},
             'chief_complaints': ['tiredness'],
             'vitals': {'sugar': '180'},
-            'diagnosis': 'Diabetes',
+            'diagnosis': '',
             'prescription': [
                 {'drug': 'Metformin', 'dose': '500mg', 'frequency': 'twice daily',
                  'timing': 'morning and evening, after meals', 'duration': ''},

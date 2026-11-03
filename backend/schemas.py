@@ -69,6 +69,7 @@ class ClinicalRecord(BaseModel):
     signed_off_by: str = ''
     signed_at: str = ''           # set only by /signoff, never by the LLM
     safety_warnings: List[RedFlag] = []      # F24, reuses the RedFlag model
+    warnings: List[str] = []                 # visible pipeline warnings, e.g. extraction failed
 
 
 class SummaryResponse(BaseModel):

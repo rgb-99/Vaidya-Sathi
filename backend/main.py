@@ -17,6 +17,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import config
 import mock_data
 import sarvam_client
+import llm
 import voice
 from schemas import (AlertAudioRequest, ClinicalRecord, ReferralRequest, StructureRequest,
                      SummaryRequest, SummaryResponse)
@@ -81,10 +82,11 @@ async def transcribe(audio: UploadFile = File(...)):
 
 
 @app.post('/api/structure')
-def structure(req: StructureRequest):
-    require_mock('/api/structure')
+async def structure(req: StructureRequest):
     with timed('structure'):
-        return mock_data.scenario_record(mock_data.scenario_for_transcript(req.transcript))
+        rec = await run_in_threadpool(llm.structure, req.transcript)
+        # Red flags: the deterministic engine (redflags.py) arrives in M4; empty until then (mock mode is canned).
+        return rec
 
 
 @app.post('/api/redflags')

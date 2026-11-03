@@ -111,3 +111,9 @@ Per clip WER: S1 transcribe 0.45 vs codemix 0.18; S2 0.38 vs 0.45 (transcribe be
 **Alternatives considered:** Copying their fonts, logos and illustrations (not done: custom licensed fonts and Sarvam's brand assets).
 **Reason:** Matches the event sponsor's look without impersonating them. System fonts only, so the app still works offline in MOCK_MODE.
 **Impact:** Styling only, no logic change. Red and amber red-flag colours are kept for safety meaning. The safety label is a permanent black strip under the header.
+
+### 2026-11-03 — M2: extraction prompt v1 and eval
+
+**Choice:** Prompt `v1` = SPEC 8.1 text + two few-shot examples (S1, S2 mock transcripts; S3 held out) + one added line: write spoken numbers as digits ("एकशे दोन" -> 102, "नव्वद बाय साठ" -> 90/60), because STT writes numbers as words (see M1). Model `LLM_MODEL` (sarvam-105b), temperature 0, max_tokens 4096. Fences and `<think>` blocks stripped; one retry with the validation error appended; then an empty record with `warnings` set. The LLM's `red_flags` output is always discarded; red flags only come from `redflags.py` (M4). Drug names normalized with rapidfuzz (cutoff 85) against ~40 formulary names. Added `warnings: List[str]` to `ClinicalRecord` (additive) to carry the visible failure warning. Mock expected records no longer contain facts the transcripts never state (patient names, diagnoses).
+**Eval** (`RUN_LIVE=1 pytest tests/test_structure_eval.py -s`; 4 inputs from demo transcripts, S2 also as number words): **26/27 fields = 96%, zero invented drugs**. One miss: S3 `vitals.sugar` ('180' not extracted). Small sample; the M9 harness gives the real numbers.
+**Impact:** `/api/structure` is real when MOCK_MODE=false; red flags stay empty there until M4.

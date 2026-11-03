@@ -50,7 +50,9 @@ export default function App() {
 
   const extract = () =>
     run('structure', async () => {
-      setRecord(await api.structure(transcript))
+      const r = await api.structure(transcript)
+      setRecord(r)
+      if (r.warnings?.length) setError(r.warnings[0])
       setConfirmed(false); setSummary(null); setTicket(null)
     })
 
