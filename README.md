@@ -144,8 +144,8 @@ Summaries, alerts and the patient page: Marathi, Hindi, English, Bengali, Gujara
 Every step returns canned data with no network, so you can click through the whole app.
 
 ```bash
-git clone https://github.com/rgb-99/ChikitsaVani.git
-cd ChikitsaVani
+git clone https://github.com/rgb-99/Vaidya-Sathi.git
+cd Vaidya-Sathi
 cp .env.example .env            # then set MOCK_MODE=true in .env
 
 python3 -m venv .venv
