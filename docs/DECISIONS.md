@@ -158,4 +158,4 @@ Per clip WER: S1 transcribe 0.45 vs codemix 0.18; S2 0.38 vs 0.45 (transcribe be
 | 2 | Deterministic check after extraction: if a complaint, advice or timing string contains non-ASCII letters, retry once with an explicit "translate to English" message | Catches the remaining cases | One extra LLM call on about 3% of requests |
 | 3 | Use `response_format=json_object` | Fewer fence and format issues | Does not address translation; not needed now |
 
-**Not done yet (waiting for your review of `eval/scenarios.jsonl`):** audio synthesis. Estimate for all 32 scenarios: 76 Bulbul calls, then each audio-mode eval run adds 32 STT calls and 32 LLM calls (plus 32 batch jobs with `--diarize`, and 64 more STT calls with `--keyterms-ab`).
+**Not done yet (waiting for your review of `eval/scenarios.jsonl`):** audio synthesis. Estimate for all 32 scenarios: 80 Bulbul calls (one per turn), then each audio-mode eval run adds 32 STT calls and 32 LLM calls (plus 32 batch jobs with `--diarize`, and 64 more STT calls with `--keyterms-ab`).
